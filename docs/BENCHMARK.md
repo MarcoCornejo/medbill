@@ -50,8 +50,8 @@ MedBillScore = (
 
 | Model | Type | Size | Expected Range |
 |---|---|---|---|
-| MedBill-OCR (ours) | Fine-tuned GLM-OCR | 0.9B + LoRA | 87-92 |
-| GLM-OCR (base) | Open-source VLM | 0.9B | 78-84 |
+| MedBill-OCR (ours) | Fine-tuned Qwen2.5-VL-3B | 0.9B + LoRA | 87-92 |
+| Qwen2.5-VL-3B (base) | Open-source VLM | 0.9B | 78-84 |
 | GPT-4V | Commercial VLM | Unknown | 76-82 |
 | AWS Textract | Commercial OCR | Unknown | 68-74 |
 | Google Document AI | Commercial OCR | Unknown | 70-76 |

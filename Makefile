@@ -71,7 +71,7 @@ evaluate-all: evaluate ## Run all model evaluations + leaderboard
 # Training
 # =============================================================================
 
-train: ## Run LoRA fine-tune on GLM-OCR
+train: ## Run LoRA fine-tune on Qwen2.5-VL-3B
 	uv run python training/scripts/train.py \
 		--config training/configs/lora_medbill.yaml \
 		--data-dir training/data/llama_factory_format \

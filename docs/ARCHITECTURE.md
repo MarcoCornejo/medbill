@@ -16,7 +16,7 @@ MedBill is a four-layer system for medical billing document understanding. Each 
 │  First public benchmark for medical billing document AI.     │
 │  Published on HuggingFace as CC-BY-4.0 dataset.              │
 │                                                              │
-│  LAYER 3: MedBill-OCR ── Fine-Tuned GLM-OCR (LoRA)       │
+│  LAYER 3: MedBill-OCR ── Fine-Tuned Qwen2.5-VL-3B (LoRA)       │
 │  Specialized extraction model trained on MedBillGen,         │
 │  evaluated on MedBillBench. ~50MB adapter.                   │
 │                                                              │
@@ -32,7 +32,7 @@ Document (photo/PDF)
        │
        ▼
 ┌─────────────────┐
-│   GLM-OCR       │  Fine-tuned for medical billing
+│   Qwen2.5-VL-3B       │  Fine-tuned for medical billing
 │   (Extraction)  │  Runs locally, ~$0/document
 └────────┬────────┘
          │ Structured JSON
@@ -122,7 +122,7 @@ Full benchmark methodology: [BENCHMARK.md](BENCHMARK.md)
 
 ## Layer 3: MedBill-OCR — Fine-Tuned Model
 
-LoRA fine-tune of GLM-OCR (0.9B) via LLaMA-Factory.
+LoRA fine-tune of Qwen2.5-VL-3B (0.9B) via LLaMA-Factory.
 
 - **Rank**: 16, **Alpha**: 32
 - **Training**: 4,000 synthetic documents, 3 epochs

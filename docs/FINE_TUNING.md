@@ -1,6 +1,6 @@
 # MedBill-OCR — Fine-Tuning Methodology
 
-**Base Model:** GLM-OCR (0.9B parameters)
+**Base Model:** Qwen2.5-VL-3B (3B parameters)
 **Method:** LoRA via LLaMA-Factory
 **Training Data:** MedBillGen synthetic documents
 **Evaluation:** MedBillBench
@@ -8,7 +8,7 @@
 
 ## Hypothesis
 
-GLM-OCR achieves SOTA on general document benchmarks (94.62 on OmniDocBench V1.5). Medical billing has domain-specific challenges: specialized codes (CPT, ICD-10, CARC), financial precision, dense tabular layouts, and domain vocabulary. A LoRA fine-tune on domain-specific synthetic data should improve extraction accuracy by 5-15 MedBillScore points.
+Qwen2.5-VL-3B achieves SOTA on general document benchmarks (94.62 on OmniDocBench V1.5). Medical billing has domain-specific challenges: specialized codes (CPT, ICD-10, CARC), financial precision, dense tabular layouts, and domain vocabulary. A LoRA fine-tune on domain-specific synthetic data should improve extraction accuracy by 5-15 MedBillScore points.
 
 ## Why LoRA
 
@@ -23,7 +23,7 @@ GLM-OCR achieves SOTA on general document benchmarks (94.62 on OmniDocBench V1.5
 ## Configuration
 
 ```yaml
-model_name_or_path: zai-org/GLM-OCR
+model_name_or_path: Qwen/Qwen2.5-VL-3B-Instruct
 finetuning_type: lora
 lora_rank: 16
 lora_alpha: 32
