@@ -1,0 +1,35 @@
+name: Feature Request
+description: Suggest a feature or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve? What's the use case?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work?
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - OCR / Extraction
+        - Error Detection / Rule Engine
+        - Plain English Explanation
+        - Appeal Letter Generation
+        - Web Interface
+        - CLI
+        - New Document Type
+        - New Template
+        - Other
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you've thought about?

@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+.venv/
+venv/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# ML / Model artifacts
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.gguf
+checkpoints/
+output/
+datasets/
+*.parquet
+
+# Medical data safety net — never commit scanned documents
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.tif
+*.dcm
+*.bmp
+!docs/**/*.png
+!docs/**/*.jpg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Docker
+docker-compose.override.yml
+
+# uv
+.python-version
+
+# Misc
+*.log
+*.tmp
+.emdash.json

@@ -1,0 +1,56 @@
+name: Bug Report
+description: Report a bug in BillShield
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## IMPORTANT: Do NOT include real medical data
+
+        **Never paste real medical bills, patient names, dates of birth, insurance IDs, or any Protected Health Information (PHI) in this issue.**
+
+        To reproduce document-related bugs, use `medbillgen` to create a synthetic test document, or describe the document layout without including real content.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - OCR / Extraction
+        - Error Detection / Rule Engine
+        - Plain English Explanation
+        - Appeal Letter Generation
+        - Web Interface
+        - CLI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        How can we reproduce this? Use synthetic documents from medbillgen, NOT real medical documents.
+      placeholder: |
+        1. Generate a test document: medbillgen generate --count 1 --seed 99
+        2. Run: billshield scan output/test_doc.png
+        3. See error...
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, browser (if web)
+      placeholder: "macOS 15, Python 3.12, Chrome 130"
+  - type: checkboxes
+    id: phi-check
+    attributes:
+      label: Privacy Check
+      options:
+        - label: I confirm this report does NOT contain any real patient data, medical records, or personally identifiable information (PHI)
+          required: true
