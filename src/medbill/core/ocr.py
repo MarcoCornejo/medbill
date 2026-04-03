@@ -121,7 +121,7 @@ class OllamaExtractor:
                             "images": [img_b64],
                         }
                     ],
-                    "format": DocumentExtraction.model_json_schema(),
+                    "format": "json",
                     "stream": False,
                     "options": {
                         "temperature": 0,
