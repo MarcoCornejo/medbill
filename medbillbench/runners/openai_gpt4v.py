@@ -59,7 +59,12 @@ class GPT4VRunner:
                             ],
                         }
                     ],
-                    "max_tokens": 4096,
+                    # GPT-5.x uses max_completion_tokens; GPT-4.x uses max_tokens
+                    **(
+                        {"max_completion_tokens": 4096}
+                        if "gpt-5" in self._model
+                        else {"max_tokens": 4096}
+                    ),
                     "temperature": 0,
                     "response_format": {"type": "json_object"},
                 },
