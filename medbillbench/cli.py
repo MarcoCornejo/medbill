@@ -10,6 +10,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from medbillbench.runners.base import BenchmarkRunner
 from pathlib import Path
 
 
@@ -71,12 +75,24 @@ def _cmd_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _create_runner(model: str) -> BenchmarkRunner:
+    """Create the appropriate runner for the model name."""
+    if model.startswith("gpt-") or model.startswith("openai:"):
+        from medbillbench.runners.openai_gpt4v import GPT4VRunner
+
+        model_name = model.removeprefix("openai:")
+        return GPT4VRunner(model=model_name)
+    else:
+        from medbillbench.runners.ollama import OllamaRunner
+
+        return OllamaRunner(model_name=model)
+
+
 def _cmd_evaluate(args: argparse.Namespace) -> int:
     """Evaluate a model against the benchmark."""
     from medbillbench.evaluator import format_leaderboard, run_benchmark
-    from medbillbench.runners.ollama import OllamaRunner
 
-    runner = OllamaRunner(model_name=args.model)
+    runner = _create_runner(args.model)
     print(f"Evaluating {runner.name} on {args.data}...")
 
     summary = run_benchmark(runner, args.data, max_docs=args.max_docs)
