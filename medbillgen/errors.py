@@ -12,6 +12,10 @@ from decimal import Decimal
 
 from medbillgen.encounter import Encounter, Procedure
 
+# E/M code families for upcoding injection
+_EM_OFFICE = ["99212", "99213", "99214", "99215"]
+_EM_ER = ["99281", "99282", "99283", "99284", "99285"]
+
 
 @dataclass
 class InjectedError:
@@ -43,6 +47,11 @@ def inject_errors(
         if err:
             injected.append(err)
 
+    if rng.random() < error_rate * 0.4:
+        err = _inject_mue_violation(encounter, rng)
+        if err:
+            injected.append(err)
+
     return injected
 
 
@@ -58,14 +67,13 @@ def _inject_duplicate(encounter: Encounter, rng: random.Random) -> InjectedError
 
     return InjectedError(
         error_type="DUPLICATE_CHARGE",
-        description=f"Duplicated CPT {original.cpt_code} (line {idx} → {new_idx})",
+        description=f"Duplicated CPT {original.cpt_code} (line {idx} -> {new_idx})",
         affected_indices=[idx, new_idx],
     )
 
 
 def _inject_unbundled(encounter: Encounter, rng: random.Random) -> InjectedError | None:
     """Add a component code that should be bundled with an existing code."""
-    # Check if CMP (80053) is present — add creatinine (82565) as unbundled
     for i, proc in enumerate(encounter.procedures):
         if proc.cpt_code == "80053":
             unbundled = Procedure(
@@ -81,5 +89,25 @@ def _inject_unbundled(encounter: Encounter, rng: random.Random) -> InjectedError
                 description=f"Added CPT 82565 (component of 80053 at line {i})",
                 affected_indices=[i, new_idx],
             )
+    return None
 
+
+def _inject_mue_violation(encounter: Encounter, rng: random.Random) -> InjectedError | None:
+    """Set units above the MUE limit for a procedure."""
+    for i, proc in enumerate(encounter.procedures):
+        # Target single-unit procedures that have MUE limits
+        if proc.cpt_code in ("71046", "85025", "80053", "93000") and proc.units == 1:
+            inflated_units = rng.randint(3, 8)
+            encounter.procedures[i] = Procedure(
+                cpt_code=proc.cpt_code,
+                description=proc.description,
+                base_medicare_rate=proc.base_medicare_rate,
+                icd10_codes=list(proc.icd10_codes),
+                units=inflated_units,
+            )
+            return InjectedError(
+                error_type="MUE_EXCEEDED",
+                description=f"CPT {proc.cpt_code}: inflated units from 1 to {inflated_units}",
+                affected_indices=[i],
+            )
     return None

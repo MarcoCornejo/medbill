@@ -30,4 +30,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - run: uv sync --frozen
-      - run: uv run pytest tests/ -v -x
+      - run: uv run pytest tests/ -v -x --cov=src/medbill --cov-report=term --cov-fail-under=80

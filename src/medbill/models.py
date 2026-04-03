@@ -61,12 +61,12 @@ class LineItem(BaseModel):
     icd10_codes: list[str] = Field(default_factory=list)
     modifier_codes: list[str] = Field(default_factory=list)
     description: str | None = None
-    units: int = 1
+    units: int = Field(default=1, ge=1)
     date_of_service: date | None = None
-    billed_amount: Decimal | None = None
-    allowed_amount: Decimal | None = None
-    adjustment_amount: Decimal | None = None
-    patient_responsibility: Decimal | None = None
+    billed_amount: Decimal | None = Field(default=None, ge=0)
+    allowed_amount: Decimal | None = Field(default=None, ge=0)
+    adjustment_amount: Decimal | None = None  # Can be negative (credit)
+    patient_responsibility: Decimal | None = Field(default=None, ge=0)
 
 
 class Totals(BaseModel):

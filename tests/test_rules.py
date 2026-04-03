@@ -184,7 +184,7 @@ class TestMUEViolations:
         errors = find_mue_violations(extraction)
         assert len(errors) == 1
         assert errors[0].error_type == ErrorType.MUE_EXCEEDED
-        assert "5 units" in errors[0].description
+        assert "5 total units" in errors[0].description
         assert "max 1" in errors[0].description
 
     def test_venipuncture_at_limit(self) -> None:
@@ -204,6 +204,26 @@ class TestMUEViolations:
     def test_unknown_code_ignored(self) -> None:
         extraction = _bill(
             LineItem(cpt_code="12345", units=100),
+        )
+        errors = find_mue_violations(extraction)
+        assert len(errors) == 0
+
+    def test_aggregate_across_lines(self) -> None:
+        """Two lines of same CPT x 1 unit each = 2 total, should exceed MUE of 1."""
+        extraction = _bill(
+            LineItem(cpt_code="71046", units=1, date_of_service=date(2026, 1, 15)),
+            LineItem(cpt_code="71046", units=1, date_of_service=date(2026, 1, 15)),
+        )
+        errors = find_mue_violations(extraction)
+        assert len(errors) == 1
+        assert "2 total units" in errors[0].description
+        assert errors[0].affected_line_indices == [0, 1]
+
+    def test_different_dates_not_aggregated(self) -> None:
+        """Same CPT on different dates should be checked independently."""
+        extraction = _bill(
+            LineItem(cpt_code="71046", units=1, date_of_service=date(2026, 1, 15)),
+            LineItem(cpt_code="71046", units=1, date_of_service=date(2026, 1, 16)),
         )
         errors = find_mue_violations(extraction)
         assert len(errors) == 0

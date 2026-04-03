@@ -114,68 +114,60 @@ MODIFIER_59_FAMILY = {"59", "XE", "XS", "XP", "XU"}
 
 
 def find_unbundled_codes(extraction: DocumentExtraction) -> list[BillingError]:
-    """Flag code pairs that should be bundled per NCCI edits."""
+    """Flag code pairs that should be bundled per NCCI edits.
+
+    O(n) algorithm: build a code→indices map, then check each NCCI pair.
+    """
     errors: list[BillingError] = []
     items = extraction.line_items
 
-    for i, item_a in enumerate(items):
-        code_a = item_a.cpt_code or item_a.hcpcs_code
-        if code_a is None:
+    # Build code → list of line indices (O(n))
+    code_indices: dict[str, list[int]] = defaultdict(list)
+    for i, item in enumerate(items):
+        code = item.cpt_code or item.hcpcs_code
+        if code is not None:
+            code_indices[code].append(i)
+
+    # Check each NCCI pair against the bill's codes (O(E) where E = NCCI edit count)
+    for (col1, col2), modifier_exception in _NCCI_LOOKUP.items():
+        if col1 not in code_indices or col2 not in code_indices:
             continue
-        for j, item_b in enumerate(items):
-            if j <= i:
-                continue
-            code_b = item_b.cpt_code or item_b.hcpcs_code
-            if code_b is None:
-                continue
 
-            # Check both orderings against NCCI lookup
-            modifier_exception = _NCCI_LOOKUP.get((code_a, code_b))
-            flipped = False
-            if modifier_exception is None:
-                modifier_exception = _NCCI_LOOKUP.get((code_b, code_a))
-                flipped = True
+        col1_idx = code_indices[col1][0]
+        col2_idx = code_indices[col2][0]
+        item_col1 = items[col1_idx]
+        item_col2 = items[col2_idx]
 
-            if modifier_exception is None:
-                continue
-
-            # If modifier exception is allowed, check for modifier
-            if modifier_exception:
-                mods_a = set(item_a.modifier_codes)
-                mods_b = set(item_b.modifier_codes)
-                has_modifier = bool((mods_a | mods_b) & MODIFIER_59_FAMILY)
-                if has_modifier:
-                    errors.append(
-                        BillingError(
-                            error_type=ErrorType.UNBUNDLED_CODES,
-                            severity=Severity.INFO,
-                            description=(
-                                f"CPT {code_a} and {code_b} are an NCCI edit pair. "
-                                f"Modifier present — verify documentation supports "
-                                f"distinct procedure."
-                            ),
-                            affected_line_indices=[i, j],
-                        )
+        if modifier_exception:
+            mods = set(item_col1.modifier_codes) | set(item_col2.modifier_codes)
+            if mods & MODIFIER_59_FAMILY:
+                errors.append(
+                    BillingError(
+                        error_type=ErrorType.UNBUNDLED_CODES,
+                        severity=Severity.INFO,
+                        description=(
+                            f"CPT {col1} and {col2} are an NCCI edit pair. "
+                            f"Modifier present — verify documentation supports "
+                            f"distinct procedure."
+                        ),
+                        affected_line_indices=[col1_idx, col2_idx],
                     )
-                    continue
-
-            # No modifier exception, or exception allowed but no modifier present
-            comprehensive = code_a if not flipped else code_b
-            component = code_b if not flipped else code_a
-            billed = extraction.line_items[j if not flipped else i].billed_amount
-            errors.append(
-                BillingError(
-                    error_type=ErrorType.UNBUNDLED_CODES,
-                    severity=Severity.ERROR,
-                    description=(
-                        f"CPT {component} is a component of {comprehensive} "
-                        f"and should not be billed separately (NCCI edit). "
-                        f"Possible unbundling."
-                    ),
-                    affected_line_indices=[i, j],
-                    estimated_overcharge=billed,
                 )
+                continue
+
+        errors.append(
+            BillingError(
+                error_type=ErrorType.UNBUNDLED_CODES,
+                severity=Severity.ERROR,
+                description=(
+                    f"CPT {col2} is a component of {col1} "
+                    f"and should not be billed separately (NCCI edit). "
+                    f"Possible unbundling."
+                ),
+                affected_line_indices=[col1_idx, col2_idx],
+                estimated_overcharge=item_col2.billed_amount,
             )
+        )
 
     return errors
 
@@ -206,27 +198,42 @@ _MUE_LIMITS: dict[str, int] = {
 
 
 def find_mue_violations(extraction: DocumentExtraction) -> list[BillingError]:
-    """Flag line items where units exceed the MUE limit for that CPT code."""
+    """Flag when total units for a CPT code exceed the MUE limit per day.
+
+    Aggregates units across all line items with the same code + date,
+    not just per-line.
+    """
     errors: list[BillingError] = []
 
+    # Aggregate: (code, date) → (total_units, [line_indices])
+    aggregated: dict[tuple[str, str | None], tuple[int, list[int]]] = {}
     for i, item in enumerate(extraction.line_items):
         code = item.cpt_code or item.hcpcs_code
         if code is None:
             continue
+        date_key = str(item.date_of_service) if item.date_of_service else None
+        key = (code, date_key)
+        if key in aggregated:
+            total, indices = aggregated[key]
+            aggregated[key] = (total + item.units, [*indices, i])
+        else:
+            aggregated[key] = (item.units, [i])
+
+    for (code, _date_key), (total_units, indices) in aggregated.items():
         max_units = _MUE_LIMITS.get(code)
         if max_units is None:
             continue
-        if item.units > max_units:
+        if total_units > max_units:
             errors.append(
                 BillingError(
                     error_type=ErrorType.MUE_EXCEEDED,
                     severity=Severity.WARNING,
                     description=(
-                        f"CPT {code}: {item.units} units billed, "
+                        f"CPT {code}: {total_units} total units billed, "
                         f"max {max_units} per day. "
                         f"Possible billing error."
                     ),
-                    affected_line_indices=[i],
+                    affected_line_indices=indices,
                 )
             )
 

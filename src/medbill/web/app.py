@@ -10,6 +10,7 @@ import io
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -29,6 +30,13 @@ app = FastAPI(
     title="MedBill",
     version=__version__,
     description="Privacy-first medical bill scanner",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permissive for local/self-hosted use
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

@@ -89,14 +89,12 @@ class TestGeneratorToRuleEngine:
 
 
 class TestRuleEngineEdgeCases:
-    def test_negative_billed_amount_skipped(self) -> None:
-        """Negative amounts should not produce price benchmarks."""
-        ext = DocumentExtraction(
-            document_type=DocumentType.MEDICAL_BILL,
-            line_items=[LineItem(cpt_code="99213", billed_amount=Decimal("-100.00"))],
-        )
-        result = analyze(ext)
-        assert len(result.price_benchmarks) == 0
+    def test_negative_billed_amount_rejected_by_validator(self) -> None:
+        """Negative amounts are now rejected at the model level."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            LineItem(cpt_code="99213", billed_amount=Decimal("-100.00"))
 
     def test_zero_billed_amount_skipped(self) -> None:
         """Zero amounts should not produce price benchmarks."""

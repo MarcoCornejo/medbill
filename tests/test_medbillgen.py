@@ -69,8 +69,8 @@ class TestErrorInjection:
         enc = generate_encounter(rng, encounter_type="er")
         injected = inject_errors(enc, rng, error_rate=1.0)
         for err in injected:
-            assert len(err.affected_indices) >= 2
-            assert err.error_type in ("DUPLICATE_CHARGE", "UNBUNDLED_CODES")
+            assert len(err.affected_indices) >= 1
+            assert err.error_type in ("DUPLICATE_CHARGE", "UNBUNDLED_CODES", "MUE_EXCEEDED")
 
 
 class TestGenerator:

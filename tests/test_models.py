@@ -3,6 +3,9 @@
 from datetime import date
 from decimal import Decimal
 
+import pytest
+from pydantic import ValidationError
+
 from medbill.models import (
     AnalysisResult,
     AppealRequest,
@@ -51,6 +54,22 @@ class TestLineItem:
         item = LineItem(billed_amount=Decimal("3247.80"))
         assert item.billed_amount == Decimal("3247.80")
         assert str(item.billed_amount) == "3247.80"
+
+    def test_rejects_negative_billed_amount(self) -> None:
+        with pytest.raises(ValidationError):
+            LineItem(cpt_code="99213", billed_amount=Decimal("-100.00"))
+
+    def test_rejects_zero_units(self) -> None:
+        with pytest.raises(ValidationError):
+            LineItem(cpt_code="99213", units=0)
+
+    def test_rejects_negative_units(self) -> None:
+        with pytest.raises(ValidationError):
+            LineItem(cpt_code="99213", units=-1)
+
+    def test_allows_negative_adjustment(self) -> None:
+        item = LineItem(cpt_code="99213", adjustment_amount=Decimal("-50.00"))
+        assert item.adjustment_amount == Decimal("-50.00")
 
     def test_serialization_roundtrip(self) -> None:
         item = LineItem(
