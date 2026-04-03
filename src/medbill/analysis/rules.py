@@ -276,7 +276,7 @@ def find_price_outliers(
 
     for i, item in enumerate(extraction.line_items):
         code = item.cpt_code or item.hcpcs_code
-        if code is None or item.billed_amount is None:
+        if code is None or item.billed_amount is None or item.billed_amount <= 0:
             continue
         medicare_rate = _MEDICARE_RATES.get(code)
         if medicare_rate is None or medicare_rate == 0:
