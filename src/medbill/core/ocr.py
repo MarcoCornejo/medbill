@@ -1,13 +1,16 @@
 """OCR extraction protocol and implementations.
 
 The OCR layer is a Protocol: anything that implements `extract()` works.
-This allows swapping between mock, GLM-OCR, and future models without
-changing downstream code.
+This allows swapping between mock, GLM-OCR (via Ollama), and future models
+without changing downstream code.
 """
 
 from __future__ import annotations
 
+import base64
 import io
+import logging
+import os
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -21,6 +24,16 @@ from medbill.models import (
     Totals,
 )
 
+logger = logging.getLogger(__name__)
+
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("MEDBILL_MODEL", "glm-ocr")
+OLLAMA_TIMEOUT = float(os.environ.get("MEDBILL_OCR_TIMEOUT", "120"))
+
+
+class ExtractionError(Exception):
+    """Raised when document extraction fails."""
+
 
 class Extractor(Protocol):
     """Protocol for document extraction backends."""
@@ -28,6 +41,112 @@ class Extractor(Protocol):
     def extract(self, image_path: Path, content: io.BytesIO | None = None) -> DocumentExtraction:
         """Extract structured data from a document image."""
         ...
+
+
+# ---------------------------------------------------------------------------
+# Factory: pick the best available extractor
+# ---------------------------------------------------------------------------
+
+
+def create_extractor() -> tuple[Extractor, str]:
+    """Probe for Ollama and return the best available extractor.
+
+    Returns (extractor_instance, extractor_name) so callers can report
+    which mode is active. Never raises — falls back to MockExtractor.
+    """
+    try:
+        import httpx
+
+        resp = httpx.get(f"{OLLAMA_HOST}/api/tags", timeout=3.0)
+        if resp.status_code == 200:
+            models = resp.json().get("models", [])
+            names = {m.get("name", "").split(":")[0] for m in models}
+            if OLLAMA_MODEL in names:
+                logger.info("Using OllamaExtractor with model %s", OLLAMA_MODEL)
+                return OllamaExtractor(), f"ollama:{OLLAMA_MODEL}"
+            logger.warning(
+                "Ollama is running but model '%s' not found. Run: ollama pull %s",
+                OLLAMA_MODEL,
+                OLLAMA_MODEL,
+            )
+    except Exception:
+        logger.warning(
+            "Ollama not available at %s. Using mock extractor. "
+            "Install Ollama and run: ollama pull %s",
+            OLLAMA_HOST,
+            OLLAMA_MODEL,
+        )
+
+    return MockExtractor(), "mock"
+
+
+# ---------------------------------------------------------------------------
+# OllamaExtractor: real GLM-OCR via Ollama HTTP API
+# ---------------------------------------------------------------------------
+
+
+class OllamaExtractor:
+    """Extract structured data from documents via GLM-OCR running in Ollama."""
+
+    def extract(self, image_path: Path, content: io.BytesIO | None = None) -> DocumentExtraction:
+        """Send image to Ollama GLM-OCR and parse the structured output."""
+        import httpx
+
+        from medbill.core.prompts import EXTRACTION_PROMPT, parse_extraction
+
+        # Get image bytes
+        if content is not None:
+            img_bytes = content.read()
+            content.seek(0)
+        else:
+            img_bytes = image_path.read_bytes()
+
+        img_b64 = base64.b64encode(img_bytes).decode("ascii")
+
+        try:
+            resp = httpx.post(
+                f"{OLLAMA_HOST}/api/chat",
+                json={
+                    "model": OLLAMA_MODEL,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": EXTRACTION_PROMPT,
+                            "images": [img_b64],
+                        }
+                    ],
+                    "format": "json",
+                    "stream": False,
+                    "options": {"temperature": 0, "num_predict": 4096},
+                },
+                timeout=OLLAMA_TIMEOUT,
+            )
+            resp.raise_for_status()
+        except httpx.ConnectError as exc:
+            msg = f"Cannot connect to Ollama at {OLLAMA_HOST}. Is it running?"
+            raise ExtractionError(msg) from exc
+        except httpx.TimeoutException as exc:
+            msg = f"Ollama timed out after {OLLAMA_TIMEOUT}s. Document may be too complex."
+            raise ExtractionError(msg) from exc
+        except httpx.HTTPStatusError as exc:
+            msg = f"Ollama returned error: {exc.response.status_code}"
+            raise ExtractionError(msg) from exc
+
+        raw_output = resp.json().get("message", {}).get("content", "")
+        if not raw_output:
+            msg = "Ollama returned empty response"
+            raise ExtractionError(msg)
+
+        try:
+            return parse_extraction(raw_output)
+        except (ValueError, Exception) as exc:
+            msg = f"Failed to parse model output: {exc}"
+            raise ExtractionError(msg) from exc
+
+
+# ---------------------------------------------------------------------------
+# MockExtractor: hardcoded data for dev/test
+# ---------------------------------------------------------------------------
 
 
 class MockExtractor:

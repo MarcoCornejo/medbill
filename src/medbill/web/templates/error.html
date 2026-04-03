@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-8 bg-red-50 border border-red-200 rounded-xl p-6">
+    <h2 class="text-xl font-bold text-red-800 mb-2">Extraction Failed</h2>
+    <p class="text-red-700">{{ error_message }}</p>
+    {% if extractor == "mock" %}
+    <p class="text-red-600 mt-2 text-sm">
+        You are using the mock extractor. Install
+        <a href="https://ollama.com" class="underline">Ollama</a> and run
+        <code class="bg-red-100 px-1 rounded">ollama pull glm-ocr</code>
+        for real document extraction.
+    </p>
+    {% endif %}
+</div>
+<div class="mt-4 text-center">
+    <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">Try again</a>
+</div>
+{% endblock %}

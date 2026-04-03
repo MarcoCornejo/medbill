@@ -13,7 +13,7 @@ from pathlib import Path
 
 from medbill import __version__
 from medbill.analysis.rules import analyze
-from medbill.core.ocr import MockExtractor
+from medbill.core.ocr import ExtractionError, create_extractor
 from medbill.models import AnalysisResult, Severity
 
 
@@ -49,9 +49,17 @@ def _cmd_scan(file_path: Path, *, output_json: bool) -> int:
         print(f"Error: file not found: {file_path}", file=sys.stderr)
         return 1
 
-    # Extract (mock for now — will swap to GLM-OCR)
-    extractor = MockExtractor()
-    extraction = extractor.extract(file_path)
+    # Extract (auto-detects Ollama/GLM-OCR, falls back to mock)
+    extractor, extractor_name = create_extractor()
+    if extractor_name == "mock":
+        print("NOTE: Using mock extractor (Ollama not available).", file=sys.stderr)
+        print("  Install Ollama and run: ollama pull glm-ocr", file=sys.stderr)
+
+    try:
+        extraction = extractor.extract(file_path)
+    except ExtractionError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
 
     # Analyze
     result = analyze(extraction)

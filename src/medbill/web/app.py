@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 
 from medbill import __version__
 from medbill.analysis.rules import analyze
-from medbill.core.ocr import Extractor, MockExtractor
+from medbill.core.ocr import ExtractionError, create_extractor
 from medbill.models import HealthResponse
 
 WEB_DIR = Path(__file__).parent
@@ -42,8 +42,8 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
-# Extractor is swappable — MockExtractor for dev, GLM-OCR for production
-_extractor: Extractor = MockExtractor()
+# Auto-detect best extractor (Ollama/GLM-OCR or MockExtractor fallback)
+_extractor, _extractor_name = create_extractor()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -69,8 +69,17 @@ async def scan(request: Request, file: UploadFile) -> HTMLResponse:
     # Process in memory via BytesIO — no disk writes
     file_bytes = io.BytesIO(content)
 
-    # Extract structured data (mock for now)
-    extraction = _extractor.extract(Path(safe_name), file_bytes)
+    # Extract structured data (Ollama/GLM-OCR if available, else mock)
+    try:
+        extraction = _extractor.extract(Path(safe_name), file_bytes)
+    except ExtractionError as exc:
+        file_bytes.close()
+        del content, file_bytes
+        return templates.TemplateResponse(
+            request,
+            "error.html",
+            {"error_message": str(exc), "extractor": _extractor_name},
+        )
 
     # Explicitly clear document content from memory
     file_bytes.close()
@@ -87,6 +96,6 @@ async def scan(request: Request, file: UploadFile) -> HTMLResponse:
 
 
 @app.get("/health")
-async def health() -> HealthResponse:
+async def health() -> dict[str, str]:
     """Health check endpoint."""
-    return HealthResponse(status="ok", version=__version__)
+    return {"status": "ok", "version": __version__, "extractor": _extractor_name}
