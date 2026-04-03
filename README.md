@@ -68,9 +68,11 @@ make dev    # http://localhost:8000
 
 **Docker (no setup required):**
 ```bash
-docker compose up --build    # Ollama + GLM-OCR pre-baked
+docker compose up --build    # Downloads GLM-OCR on first run (~2.2GB)
 # Open http://localhost:8000
 ```
+
+> **Note:** Docker Desktop for Mac/Windows runs in a VM without GPU access. OCR inference is significantly slower (~5-10 min/page vs ~15s native). For best performance, run Ollama natively on the host and use `make dev`.
 
 ## Example Output
 

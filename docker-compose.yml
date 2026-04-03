@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     environment:
       - MEDBILL_MODEL=glm-ocr
-      - MEDBILL_OCR_TIMEOUT=120
+      - MEDBILL_OCR_TIMEOUT=600
     volumes:
       - ollama-models:/root/.ollama
     # Uncomment below for GPU passthrough (requires nvidia-container-toolkit):
