@@ -60,8 +60,9 @@ htmlcov/
 # Docker
 docker-compose.override.yml
 
-# CMS data (build artifact, not git-tracked)
+# CMS data (build artifacts, not git-tracked)
 src/medbill/data/cms.db
+.cache/
 
 # uv
 .python-version
