@@ -1,0 +1,19 @@
+# docker compose up --build
+# Open http://localhost:8000
+
+services:
+  medbill:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MEDBILL_MODEL=glm-ocr
+      - MEDBILL_OCR_TIMEOUT=120
+    # Uncomment below for GPU passthrough (requires nvidia-container-toolkit):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
