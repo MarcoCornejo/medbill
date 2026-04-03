@@ -140,7 +140,9 @@ class TestEndToEnd:
             ext = DocumentExtraction.model_validate(r["extraction"])
             analysis = analyze(ext)
 
-            injected_types = {e["error_type"] for e in r["injected_errors"]}  # type: ignore[union-attr]
+            errs = r["injected_errors"]
+            assert isinstance(errs, list)
+            injected_types = {e["error_type"] for e in errs}
 
             # Check if rule engine caught the injected errors
             detected_types = {e.error_type.value for e in analysis.errors}

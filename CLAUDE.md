@@ -25,9 +25,13 @@ New source code goes in these locations:
 - `src/medbill/` — core library (extraction, analysis, explanation)
 - `src/medbill/web/` — FastAPI app, Jinja2 templates, static assets
 - `medbillgen/` — synthetic document generator (separate package)
-- `medbillbench/` — benchmark framework (separate package)
-- `training/` — fine-tuning scripts and configs
-- `tests/` — all tests (mirror src/ structure)
+- `medbillbench/` — benchmark framework (planned, not yet created)
+- `training/` — fine-tuning scripts and configs (planned, not yet created)
+- `tests/` — all tests (mirrors src/medbill/ and medbillgen/)
+
+## Import Convention
+
+Import as `medbill.*` (e.g., `from medbill.models import ...`), never `src.medbill.*`.
 
 ## Testing
 

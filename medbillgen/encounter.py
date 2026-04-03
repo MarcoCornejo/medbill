@@ -41,12 +41,14 @@ class Encounter:
 # ---------------------------------------------------------------------------
 
 _OFFICE_VISITS: list[Procedure] = [
-    Procedure("99212", "Office visit, established, straightforward", Decimal("57.46"), ["Z00.00"]),
+    Procedure("99212", "Office visit, established, straightforward", Decimal("57.46"), ["R69"]),
     Procedure("99213", "Office visit, established, low complexity", Decimal("95.42"), ["M54.5"]),
     Procedure(
         "99214", "Office visit, established, moderate complexity", Decimal("139.81"), ["E11.9"]
     ),
-    Procedure("99215", "Office visit, established, high complexity", Decimal("188.54"), ["J06.9"]),
+    Procedure(
+        "99215", "Office visit, established, high complexity", Decimal("188.54"), ["E11.65"]
+    ),
 ]
 
 _ER_VISITS: list[Procedure] = [

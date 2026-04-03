@@ -13,7 +13,7 @@ setup: ## Install all dependencies via uv
 # =============================================================================
 
 dev: ## Start local dev server
-	uv run uvicorn src.medbill.web.app:app --reload --host 0.0.0.0 --port 8000
+	uv run uvicorn medbill.web.app:app --reload --host 0.0.0.0 --port 8000
 
 # =============================================================================
 # Quality
@@ -38,21 +38,16 @@ format: ## Auto-format code
 # Data Generation (MedBillGen)
 # =============================================================================
 
-generate-data: ## Generate 5,000 synthetic training documents
+generate-data: ## Generate synthetic training documents
 	uv run python -m medbillgen.cli generate \
-		--count 5000 --output medbillgen/output/train --seed 42 \
-		--augmentation mixed --error-rate 0.3
+		--count 5000 --output medbillgen/output/train --seed 42 --error-rate 0.3
 	uv run python -m medbillgen.cli generate \
-		--count 500 --output medbillgen/output/val --seed 43 \
-		--augmentation mixed --error-rate 0.3
+		--count 500 --output medbillgen/output/val --seed 43 --error-rate 0.3
 	@echo "Generated 5,500 training + validation documents."
 
-generate-bench: ## Generate 500 benchmark documents
+generate-sample: ## Generate a small sample for testing
 	uv run python -m medbillgen.cli generate \
-		--count 500 --output medbillbench/data/test --seed 44 \
-		--augmentation tiered --error-rate 0.35 --benchmark-mode
-	uv run python -m medbillbench.cli create-manifest
-	@echo "Generated 500 benchmark documents with manifest."
+		--count 10 --output medbillgen/output/sample --seed 42 --error-rate 0.5
 
 # =============================================================================
 # Benchmark (MedBillBench)

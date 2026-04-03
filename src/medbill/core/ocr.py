@@ -1,16 +1,17 @@
 """OCR extraction protocol and implementations.
 
-The OCR layer is a protocol: anything that returns DocumentExtraction works.
+The OCR layer is a Protocol: anything that implements `extract()` works.
 This allows swapping between mock, GLM-OCR, and future models without
 changing downstream code.
 """
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+import io
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from typing import Protocol
 
 from medbill.models import (
     DenialInfo,
@@ -21,22 +22,22 @@ from medbill.models import (
 )
 
 
-class Extractor(ABC):
+class Extractor(Protocol):
     """Protocol for document extraction backends."""
 
-    @abstractmethod
-    def extract(self, image_path: Path) -> DocumentExtraction:
+    def extract(self, image_path: Path, content: io.BytesIO | None = None) -> DocumentExtraction:
         """Extract structured data from a document image."""
+        ...
 
 
-class MockExtractor(Extractor):
+class MockExtractor:
     """Returns a hardcoded extraction for development and testing.
 
-    This lets the full pipeline (upload → extract → analyze → display)
+    This lets the full pipeline (upload -> extract -> analyze -> display)
     work end-to-end without a real model installed.
     """
 
-    def extract(self, image_path: Path) -> DocumentExtraction:
+    def extract(self, image_path: Path, content: io.BytesIO | None = None) -> DocumentExtraction:
         return DocumentExtraction(
             document_type=DocumentType.MEDICAL_BILL,
             patient_name="Jane Rodriguez",

@@ -187,16 +187,16 @@ class TestMUEViolations:
         assert "5 units" in errors[0].description
         assert "max 1" in errors[0].description
 
-    def test_venipuncture_allows_multiple(self) -> None:
+    def test_venipuncture_at_limit(self) -> None:
         extraction = _bill(
-            LineItem(cpt_code="36415", units=3),
+            LineItem(cpt_code="36415", units=1),
         )
         errors = find_mue_violations(extraction)
-        assert len(errors) == 0  # max is 3
+        assert len(errors) == 0  # max is 1
 
     def test_venipuncture_exceeds(self) -> None:
         extraction = _bill(
-            LineItem(cpt_code="36415", units=4),
+            LineItem(cpt_code="36415", units=2),
         )
         errors = find_mue_violations(extraction)
         assert len(errors) == 1
@@ -217,12 +217,12 @@ class TestMUEViolations:
 class TestPriceOutliers:
     def test_reasonable_price(self) -> None:
         extraction = _bill(
-            LineItem(cpt_code="99213", billed_amount=Decimal("250.00")),
+            LineItem(cpt_code="99213", billed_amount=Decimal("350.00")),
         )
         errors, benchmarks = find_price_outliers(extraction)
-        assert len(errors) == 0  # 250/95.42 = 2.6x, below 3x threshold
+        assert len(errors) == 0  # 350/95.42 = 3.67x, below 4x threshold
         assert len(benchmarks) == 1
-        assert benchmarks[0].ratio == 2.62
+        assert benchmarks[0].ratio == 3.67
 
     def test_extreme_outlier(self) -> None:
         extraction = _bill(

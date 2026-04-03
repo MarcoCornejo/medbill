@@ -33,7 +33,7 @@ def analyze(extraction: DocumentExtraction) -> AnalysisResult:
     benchmarks.extend(price_benchmarks)
 
     total_overcharge = sum(
-        (e.estimated_overcharge for e in errors if e.estimated_overcharge),
+        (e.estimated_overcharge for e in errors if e.estimated_overcharge is not None),
         Decimal("0"),
     )
 
@@ -91,19 +91,17 @@ def find_duplicate_charges(extraction: DocumentExtraction) -> list[BillingError]
 # Format: (col1_comprehensive, col2_component, modifier_exception)
 # modifier_exception: True = allowed with modifier -59/-XE/-XS/-XP/-XU
 _NCCI_EDITS: list[tuple[str, str, bool]] = [
-    # E/M + procedures (most common denial driver)
+    # E/M same-day stacking (not formal NCCI Col1/Col2 pairs, but commonly denied)
     ("99213", "99211", False),
     ("99214", "99213", False),
     ("99215", "99214", False),
     ("99215", "99213", False),
     # Surgical bundles
-    ("58150", "58661", True),  # Hysterectomy includes lysis
-    ("27447", "27486", True),  # Knee replacement includes revision components
-    # Lab panels vs individual tests
+    ("58150", "58661", True),  # Hysterectomy includes lysis of adhesions
+    # Lab panels vs individual tests (verified NCCI pairs)
     ("80053", "82565", False),  # Comprehensive metabolic includes creatinine
-    ("80053", "84443", False),  # CMP includes TSH — actually doesn't, but common error
     ("80048", "82310", False),  # Basic metabolic includes calcium
-    # Radiology
+    # Radiology (verified NCCI pairs)
     ("71046", "71045", False),  # 2-view chest includes 1-view
     ("73562", "73560", False),  # 3-view knee includes 2-view
 ]
@@ -201,7 +199,7 @@ _MUE_LIMITS: dict[str, int] = {
     "85025": 1,  # CBC with differential
     "80053": 1,  # Comprehensive metabolic panel
     "80048": 1,  # Basic metabolic panel
-    "36415": 3,  # Venipuncture
+    "36415": 1,  # Venipuncture
     "93000": 1,  # EKG
     "27447": 1,  # Total knee replacement
 }
@@ -259,10 +257,14 @@ _MEDICARE_RATES: dict[str, Decimal] = {
     "71046": Decimal("28.18"),
     "93000": Decimal("17.26"),
     "36415": Decimal("3.00"),
+    "84443": Decimal("17.99"),
+    "82310": Decimal("5.73"),
+    "82565": Decimal("5.89"),
     "27447": Decimal("700.36"),
 }
 
-PRICE_OUTLIER_THRESHOLD = Decimal("3.0")  # Flag if billed > 3x Medicare rate
+# 4x threshold: median hospital markup is 2.5-3.5x Medicare. 3x flags normal hospitals.
+PRICE_OUTLIER_THRESHOLD = Decimal("4.0")
 
 
 def find_price_outliers(

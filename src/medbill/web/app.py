@@ -1,14 +1,15 @@
 """FastAPI web application for MedBill.
 
-Upload a bill → extract → analyze → show results.
+Upload a bill -> extract -> analyze -> show results.
 Server-rendered with Jinja2 + HTMX. Zero JS build step.
 """
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
-from fastapi import FastAPI, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -21,6 +22,8 @@ from medbill.models import HealthResponse
 WEB_DIR = Path(__file__).parent
 TEMPLATE_DIR = WEB_DIR / "templates"
 STATIC_DIR = WEB_DIR / "static"
+
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 app = FastAPI(
     title="MedBill",
@@ -44,11 +47,26 @@ async def index(request: Request) -> HTMLResponse:
 @app.post("/scan", response_class=HTMLResponse)
 async def scan(request: Request, file: UploadFile) -> HTMLResponse:
     """Process an uploaded document and return analysis results."""
-    # Read file into memory (ephemeral — never written to disk)
-    _ = await file.read()
+    # Read file into memory with size limit — never written to disk
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 10MB)")
+
+    # Explicitly close the upload to release any spooled temp file
+    await file.close()
+
+    # Sanitize filename (prevent path traversal)
+    safe_name = Path(file.filename or "document.pdf").name
+
+    # Process in memory via BytesIO — no disk writes
+    file_bytes = io.BytesIO(content)
 
     # Extract structured data (mock for now)
-    extraction = _extractor.extract(Path(file.filename or "document.pdf"))
+    extraction = _extractor.extract(Path(safe_name), file_bytes)
+
+    # Explicitly clear document content from memory
+    file_bytes.close()
+    del content, file_bytes
 
     # Run rule engine
     result = analyze(extraction)
