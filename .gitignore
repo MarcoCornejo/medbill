@@ -67,3 +67,4 @@ docker-compose.override.yml
 *.log
 *.tmp
 .emdash.json
+test-documents/

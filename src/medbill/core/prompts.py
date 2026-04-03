@@ -172,6 +172,32 @@ _PLACEHOLDER_VALUES = {
     "A00.0",
 }
 
+# Date format normalization patterns
+_DATE_FORMATS = [
+    "%m/%d/%y",  # 01/02/05
+    "%m/%d/%Y",  # 01/02/2005
+    "%m-%d-%Y",  # 01-02-2005
+    "%Y-%m-%d",  # 2005-01-02 (already correct)
+]
+
+
+def _normalize_date(value: str) -> str | None:
+    """Try to parse various date formats into YYYY-MM-DD."""
+    from datetime import datetime
+
+    if value in _PLACEHOLDER_VALUES or not value.strip():
+        return None
+    for fmt in _DATE_FORMATS:
+        try:
+            dt = datetime.strptime(value.strip(), fmt)
+            # Handle 2-digit years: 00-30 -> 2000s, 31-99 -> 1900s
+            if dt.year < 100:
+                dt = dt.replace(year=dt.year + 2000 if dt.year <= 30 else dt.year + 1900)
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return None
+
 
 def _sanitize_model_output(data: dict[str, Any]) -> dict[str, Any]:
     """Clean up common VLM output quirks before Pydantic validation.
@@ -189,10 +215,18 @@ def _sanitize_model_output(data: dict[str, Any]) -> dict[str, Any]:
         ):
             data[key] = None
 
-    # service_dates: ensure it's a list
+    # Normalize patient_dob date
+    dob = data.get("patient_dob")
+    if isinstance(dob, str):
+        data["patient_dob"] = _normalize_date(dob)
+
+    # service_dates: ensure it's a list and normalize dates
     sd = data.get("service_dates")
     if isinstance(sd, str):
-        data["service_dates"] = [sd] if sd and sd not in _PLACEHOLDER_VALUES else []
+        normalized = _normalize_date(sd)
+        data["service_dates"] = [normalized] if normalized else []
+    elif isinstance(sd, list):
+        data["service_dates"] = [d for s in sd if isinstance(s, str) and (d := _normalize_date(s))]
 
     # Clean line items
     for item in data.get("line_items", []):
@@ -208,14 +242,30 @@ def _sanitize_model_output(data: dict[str, Any]) -> dict[str, Any]:
             lst = item.get(list_field, [])
             if isinstance(lst, list):
                 item[list_field] = [v for v in lst if v not in _PLACEHOLDER_VALUES]
-        # Empty string fields -> None
-        for str_field in ("description", "date_of_service"):
-            val = item.get(str_field)
-            if isinstance(val, str) and (val.strip() == "" or val in _PLACEHOLDER_VALUES):
-                item[str_field] = None
-        # Empty string units -> default 1
-        if isinstance(item.get("units"), str) and item["units"].strip() == "":
-            item["units"] = 1
+        # Empty string description -> None
+        desc = item.get("description")
+        if isinstance(desc, str) and (desc.strip() == "" or desc in _PLACEHOLDER_VALUES):
+            item["description"] = None
+        # Normalize date_of_service
+        dos = item.get("date_of_service")
+        if isinstance(dos, str):
+            item["date_of_service"] = _normalize_date(dos)
+        # Fix units: if it looks like a dollar amount (has decimal), it's misplaced
+        units_val = item.get("units")
+        if isinstance(units_val, str):
+            stripped = units_val.strip()
+            if "." in stripped:
+                # Model put a dollar amount in units — move to billed_amount if empty
+                if not item.get("billed_amount") or item.get("billed_amount") == "0.00":
+                    item["billed_amount"] = stripped
+                item["units"] = 1
+            elif stripped == "" or stripped in _PLACEHOLDER_VALUES:
+                item["units"] = 1
+            else:
+                try:
+                    item["units"] = int(stripped)
+                except ValueError:
+                    item["units"] = 1
 
     # Clean denial: if not explicitly denied, reset placeholder values
     denial = data.get("denial", {})
