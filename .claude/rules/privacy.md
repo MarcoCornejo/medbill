@@ -26,3 +26,5 @@ Medical documents are the most sensitive data a person has. The architecture mak
 7. **No cookies, no tracking, no fingerprinting.** The web interface uses zero client-side tracking. No Google Analytics, no Mixpanel, no session cookies. Optional: Plausible/Umami (self-hosted, cookieless, GDPR-compliant).
 
 8. **Disclaimer in UI.** Every interface (web, CLI) must display: "This tool is not legal or medical advice. Consult a professional for your specific situation."
+
+9. **Upload security.** Uploads must: enforce a size limit (currently 10MB), sanitize filenames with `Path(name).name`, close the UploadFile immediately after reading, and process content via `io.BytesIO` (never write to disk). See `web-app.md` for the full upload flow.

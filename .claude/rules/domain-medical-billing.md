@@ -30,17 +30,21 @@ globs: ["**/*.py", "**/*.md"]
 
 ## Common Billing Errors
 
-### Implemented (V1 scope)
-- **Duplicate charges**: Same CPT code + same date of service appearing twice
-- **Unbundling**: Billing component codes separately when a bundled code exists (detected via NCCI edits — note: NCCI edits have Column 1/2 pairs, modifier exceptions, and temporal effective dates; this is NOT a simple lookup table)
-- **Upcoding**: Billing a higher-complexity code than the service warrants (e.g., 99215 instead of 99213)
-- **Balance billing**: Charging the patient the difference between billed and allowed amounts for in-network services (illegal in most cases)
+### Implemented in rules.py
+- **Duplicate charges**: Same CPT/HCPCS code + same date of service appearing twice
+- **Unbundling (NCCI)**: 10 curated code pairs with boolean modifier exceptions. Checks both orderings. Modifier-59 family (59, XE, XS, XP, XU) downgrades severity to INFO.
+- **MUE violations**: 16 CPT codes with max units-per-day limits. Flags when line item units exceed the limit.
+- **Price outliers**: 21 CPT codes with national Medicare rates. Flags when billed amount exceeds 4x Medicare rate. Skips negative/zero amounts.
+
+### Defined in ErrorType enum but NOT yet implemented
+- **Upcoding**: Billing a higher-complexity code than the service warrants
+- **Balance billing**: Charging patient the billed-minus-allowed difference for in-network services
 - **Expired codes**: Using CPT codes retired in previous years
 
 ### Known gaps (future phases)
 - **Modifier misuse**: Incorrect use of modifiers -25, -59, -XE/-XS/-XP/-XU (top denial driver nationally)
 - **Place of service errors**: POS 11 vs 22 vs 23 pricing discrepancies
-- **Units of service errors**: Wrong quantity billed (especially infusions, PT, anesthesia time)
+- **Units of service errors across lines**: MUE currently checks per-line, not aggregated across multiple lines with the same CPT
 - **Timely filing violations**: Claims submitted past payer deadline
 - **Coordination of benefits errors**: Common with dual-coverage patients
 - **Gender/age-specific mismatches**: Procedure inappropriate for patient demographics
