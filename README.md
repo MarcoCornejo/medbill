@@ -66,9 +66,36 @@ make dev    # http://localhost:8000
 
 **Without Ollama:** The app runs in demo mode with sample data so you can explore the UI and rule engine.
 
+**Docker (no setup required):**
+```bash
+docker compose up --build    # Ollama + GLM-OCR pre-baked
+# Open http://localhost:8000
+```
+
+## Example Output
+
+```
+$ medbill scan hospital_bill.png
+
+  Document type: MEDICAL_BILL
+  Provider:      Memorial Regional Hospital
+  Line items:    6
+  Total billed:  $1100.00
+
+  ISSUES FOUND: 8
+  Estimated overcharge: $195.00
+
+  [ERROR]   [DUPLICATE_CHARGE] CPT 85025 billed 2 times on 2026-01-15.
+     Estimated overcharge: $120.00
+  [ERROR]   [UNBUNDLED_CODES] CPT 82565 is a component of 80053 (NCCI edit).
+     Estimated overcharge: $75.00
+  [WARNING] [PRICE_OUTLIER] CPT 80053: billed $185.00, Medicare rate $11.22 (16.5x).
+  [WARNING] [PRICE_OUTLIER] CPT 93000: billed $250.00, Medicare rate $17.26 (14.5x).
+```
+
 ## Real Document Validation
 
-Tested on public sample medical documents:
+Tested on public sample medical documents (GLM-OCR 0.9B via Ollama):
 
 | Document | Patient | Total Billed | Line Items | Amounts |
 |---|---|---|---|---|
