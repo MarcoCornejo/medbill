@@ -88,6 +88,9 @@ def create_extractor() -> tuple[Extractor, str]:
 class OllamaExtractor:
     """Extract structured data from documents via GLM-OCR running in Ollama."""
 
+    # Max image dimension — larger images have quadratically more visual tokens
+    MAX_IMAGE_DIM = 1600  # Downscale very large images only (phone photos can be 4000px+)
+
     def extract(self, image_path: Path, content: io.BytesIO | None = None) -> DocumentExtraction:
         """Send image to Ollama GLM-OCR and parse the structured output."""
         import httpx
@@ -100,6 +103,9 @@ class OllamaExtractor:
             content.seek(0)
         else:
             img_bytes = image_path.read_bytes()
+
+        # Downscale for speed — fewer pixels = fewer visual tokens = faster inference
+        img_bytes = self._optimize_image(img_bytes)
 
         img_b64 = base64.b64encode(img_bytes).decode("ascii")
 
@@ -117,7 +123,10 @@ class OllamaExtractor:
                     ],
                     "format": "json",
                     "stream": False,
-                    "options": {"temperature": 0, "num_predict": 4096},
+                    "options": {
+                        "temperature": 0,
+                        "num_predict": 4096,
+                    },
                 },
                 timeout=OLLAMA_TIMEOUT,
             )
@@ -137,11 +146,46 @@ class OllamaExtractor:
             msg = "Ollama returned empty response"
             raise ExtractionError(msg)
 
+        logger.info("Ollama inference completed (%d chars output)", len(raw_output))
+
         try:
             return parse_extraction(raw_output)
         except (ValueError, Exception) as exc:
             msg = f"Failed to parse model output: {exc}"
             raise ExtractionError(msg) from exc
+
+    @staticmethod
+    def _optimize_image(img_bytes: bytes) -> bytes:
+        """Downscale image for faster VLM inference.
+
+        Fewer pixels = fewer visual tokens = faster attention computation.
+        800px max dimension preserves readability for standard printed text.
+        """
+        import PIL.Image
+
+        img = PIL.Image.open(io.BytesIO(img_bytes))
+        w, h = img.size
+
+        # Only downscale if larger than threshold
+        max_dim = OllamaExtractor.MAX_IMAGE_DIM
+        if max(w, h) <= max_dim:
+            return img_bytes
+
+        # Maintain aspect ratio
+        if w > h:
+            new_w = max_dim
+            new_h = int(h * max_dim / w)
+        else:
+            new_h = max_dim
+            new_w = int(w * max_dim / h)
+
+        resized = img.resize((new_w, new_h), PIL.Image.Resampling.LANCZOS)
+        logger.info("Downscaled image: %dx%d -> %dx%d", w, h, new_w, new_h)
+
+        # Re-encode as PNG
+        buf = io.BytesIO()
+        resized.save(buf, format="PNG")
+        return buf.getvalue()
 
 
 # ---------------------------------------------------------------------------
