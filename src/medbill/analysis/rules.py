@@ -2,6 +2,8 @@
 
 Pure functions. Deterministic. No ML, no API calls, no randomness.
 Input: DocumentExtraction. Output: list[BillingError].
+
+Data comes from src/medbill/data/ (SQLite with hardcoded fallback).
 """
 
 from __future__ import annotations
@@ -9,6 +11,7 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal
 
+from medbill.data import get_all_ncci_edits, get_medicare_rate, get_mue_limit
 from medbill.models import (
     AnalysisResult,
     BillingError,
@@ -17,6 +20,11 @@ from medbill.models import (
     PriceBenchmark,
     Severity,
 )
+
+MODIFIER_59_FAMILY = {"59", "XE", "XS", "XP", "XU"}
+
+# 4x threshold: median hospital markup is 2.5-3.5x Medicare.
+PRICE_OUTLIER_THRESHOLD = Decimal("4.0")
 
 
 def analyze(extraction: DocumentExtraction) -> AnalysisResult:
@@ -87,49 +95,27 @@ def find_duplicate_charges(extraction: DocumentExtraction) -> list[BillingError]
 # Rule: NCCI unbundled codes
 # ---------------------------------------------------------------------------
 
-# Curated seed: high-impact NCCI edit pairs.
-# Format: (col1_comprehensive, col2_component, modifier_exception)
-# modifier_exception: True = allowed with modifier -59/-XE/-XS/-XP/-XU
-_NCCI_EDITS: list[tuple[str, str, bool]] = [
-    # E/M same-day stacking (not formal NCCI Col1/Col2 pairs, but commonly denied)
-    ("99213", "99211", False),
-    ("99214", "99213", False),
-    ("99215", "99214", False),
-    ("99215", "99213", False),
-    # Surgical bundles
-    ("58150", "58661", True),  # Hysterectomy includes lysis of adhesions
-    # Lab panels vs individual tests (verified NCCI pairs)
-    ("80053", "82565", False),  # Comprehensive metabolic includes creatinine
-    ("80048", "82310", False),  # Basic metabolic includes calcium
-    # Radiology (verified NCCI pairs)
-    ("71046", "71045", False),  # 2-view chest includes 1-view
-    ("73562", "73560", False),  # 3-view knee includes 2-view
-]
-
-_NCCI_LOOKUP: dict[tuple[str, str], bool] = {
-    (col1, col2): mod_ex for col1, col2, mod_ex in _NCCI_EDITS
-}
-
-MODIFIER_59_FAMILY = {"59", "XE", "XS", "XP", "XU"}
-
 
 def find_unbundled_codes(extraction: DocumentExtraction) -> list[BillingError]:
     """Flag code pairs that should be bundled per NCCI edits.
 
-    O(n) algorithm: build a code→indices map, then check each NCCI pair.
+    O(n) algorithm: build a code->indices map, then check each NCCI pair.
     """
     errors: list[BillingError] = []
     items = extraction.line_items
 
-    # Build code → list of line indices (O(n))
+    # Build code -> list of line indices (O(n))
     code_indices: dict[str, list[int]] = defaultdict(list)
     for i, item in enumerate(items):
         code = item.cpt_code or item.hcpcs_code
         if code is not None:
             code_indices[code].append(i)
 
-    # Check each NCCI pair against the bill's codes (O(E) where E = NCCI edit count)
-    for (col1, col2), modifier_exception in _NCCI_LOOKUP.items():
+    # Load NCCI edits from data layer (SQLite or fallback)
+    ncci_edits = get_all_ncci_edits()
+
+    # Check each NCCI pair against the bill's codes (O(E) where E = edit count)
+    for col1, col2, modifier_indicator in ncci_edits:
         if col1 not in code_indices or col2 not in code_indices:
             continue
 
@@ -137,6 +123,7 @@ def find_unbundled_codes(extraction: DocumentExtraction) -> list[BillingError]:
         col2_idx = code_indices[col2][0]
         item_col1 = items[col1_idx]
         item_col2 = items[col2_idx]
+        modifier_exception = modifier_indicator == 1
 
         if modifier_exception:
             mods = set(item_col1.modifier_codes) | set(item_col2.modifier_codes)
@@ -176,36 +163,15 @@ def find_unbundled_codes(extraction: DocumentExtraction) -> list[BillingError]:
 # Rule: MUE (Medically Unlikely Edits)
 # ---------------------------------------------------------------------------
 
-# CPT code -> max units per day (curated high-frequency codes)
-_MUE_LIMITS: dict[str, int] = {
-    "71045": 1,  # Chest X-ray, 1 view
-    "71046": 1,  # Chest X-ray, 2 views
-    "99213": 1,  # Office visit
-    "99214": 1,  # Office visit
-    "99215": 1,  # Office visit
-    "99281": 1,  # ED visit level 1
-    "99282": 1,  # ED visit level 2
-    "99283": 1,  # ED visit level 3
-    "99284": 1,  # ED visit level 4
-    "99285": 1,  # ED visit level 5
-    "85025": 1,  # CBC with differential
-    "80053": 1,  # Comprehensive metabolic panel
-    "80048": 1,  # Basic metabolic panel
-    "36415": 1,  # Venipuncture
-    "93000": 1,  # EKG
-    "27447": 1,  # Total knee replacement
-}
-
 
 def find_mue_violations(extraction: DocumentExtraction) -> list[BillingError]:
     """Flag when total units for a CPT code exceed the MUE limit per day.
 
-    Aggregates units across all line items with the same code + date,
-    not just per-line.
+    Aggregates units across all line items with the same code + date.
     """
     errors: list[BillingError] = []
 
-    # Aggregate: (code, date) → (total_units, [line_indices])
+    # Aggregate: (code, date) -> (total_units, [line_indices])
     aggregated: dict[tuple[str, str | None], tuple[int, list[int]]] = {}
     for i, item in enumerate(extraction.line_items):
         code = item.cpt_code or item.hcpcs_code
@@ -220,7 +186,7 @@ def find_mue_violations(extraction: DocumentExtraction) -> list[BillingError]:
             aggregated[key] = (item.units, [i])
 
     for (code, _date_key), (total_units, indices) in aggregated.items():
-        max_units = _MUE_LIMITS.get(code)
+        max_units = get_mue_limit(code)
         if max_units is None:
             continue
         if total_units > max_units:
@@ -244,35 +210,6 @@ def find_mue_violations(extraction: DocumentExtraction) -> list[BillingError]:
 # Rule: Price outliers vs Medicare rates
 # ---------------------------------------------------------------------------
 
-# CPT code -> national Medicare non-facility rate (2026 Q1, simplified)
-# Source: CMS Medicare Physician Fee Schedule (national average)
-_MEDICARE_RATES: dict[str, Decimal] = {
-    "99211": Decimal("25.19"),
-    "99212": Decimal("57.46"),
-    "99213": Decimal("95.42"),
-    "99214": Decimal("139.81"),
-    "99215": Decimal("188.54"),
-    "99281": Decimal("22.98"),
-    "99282": Decimal("50.84"),
-    "99283": Decimal("81.52"),
-    "99284": Decimal("140.95"),
-    "99285": Decimal("211.43"),
-    "85025": Decimal("8.46"),
-    "80053": Decimal("11.22"),
-    "80048": Decimal("8.68"),
-    "71045": Decimal("22.01"),
-    "71046": Decimal("28.18"),
-    "93000": Decimal("17.26"),
-    "36415": Decimal("3.00"),
-    "84443": Decimal("17.99"),
-    "82310": Decimal("5.73"),
-    "82565": Decimal("5.89"),
-    "27447": Decimal("700.36"),
-}
-
-# 4x threshold: median hospital markup is 2.5-3.5x Medicare. 3x flags normal hospitals.
-PRICE_OUTLIER_THRESHOLD = Decimal("4.0")
-
 
 def find_price_outliers(
     extraction: DocumentExtraction,
@@ -285,7 +222,7 @@ def find_price_outliers(
         code = item.cpt_code or item.hcpcs_code
         if code is None or item.billed_amount is None or item.billed_amount <= 0:
             continue
-        medicare_rate = _MEDICARE_RATES.get(code)
+        medicare_rate = get_medicare_rate(code)
         if medicare_rate is None or medicare_rate == 0:
             continue
 

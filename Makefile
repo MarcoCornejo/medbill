@@ -6,7 +6,11 @@
 
 setup: ## Install all dependencies via uv
 	uv sync --all-extras
+	uv run python scripts/build_cms_data.py
 	@echo "Setup complete. Run 'make dev' to start development."
+
+build-data: ## Rebuild CMS SQLite database from seed data
+	uv run python scripts/build_cms_data.py
 
 # =============================================================================
 # Development
