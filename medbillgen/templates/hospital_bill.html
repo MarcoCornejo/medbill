@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: letter; margin: 0.75in; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #222; line-height: 1.4; }
+  .header { border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
+  .hospital-name { font-size: 16pt; font-weight: bold; color: #1a3a5c; }
+  .hospital-address { font-size: 8pt; color: #666; }
+  .statement-title { font-size: 12pt; font-weight: bold; text-align: center; margin: 16px 0; text-transform: uppercase; letter-spacing: 1px; }
+  .info-grid { display: flex; justify-content: space-between; margin-bottom: 16px; }
+  .info-block { }
+  .info-label { font-size: 8pt; color: #666; text-transform: uppercase; }
+  .info-value { font-size: 10pt; font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9pt; }
+  thead th { background: #f0f0f0; border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 8pt; text-transform: uppercase; }
+  tbody td { border: 1px solid #ddd; padding: 5px 8px; }
+  .amount { text-align: right; font-family: 'Courier New', monospace; }
+  .totals { margin-top: 16px; }
+  .totals table { width: 50%; margin-left: auto; }
+  .totals td { padding: 4px 8px; }
+  .totals .total-row { font-weight: bold; border-top: 2px solid #333; font-size: 11pt; }
+  .footer { margin-top: 24px; border-top: 1px solid #ccc; padding-top: 12px; font-size: 8pt; color: #666; }
+  .pay-box { border: 2px solid #1a3a5c; padding: 12px; margin-top: 16px; text-align: center; }
+  .pay-amount { font-size: 16pt; font-weight: bold; color: #1a3a5c; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hospital-name">{{ provider_name }}</div>
+  <div class="hospital-address">{{ provider_address }}</div>
+  <div class="hospital-address">Tax ID: {{ provider_tax_id }} &nbsp;|&nbsp; NPI: {{ provider_npi }}</div>
+</div>
+
+<div class="statement-title">Patient Statement of Charges</div>
+
+<div class="info-grid">
+  <div class="info-block">
+    <div class="info-label">Patient</div>
+    <div class="info-value">{{ patient_name }}</div>
+    <div style="font-size: 9pt;">DOB: {{ patient_dob }}</div>
+  </div>
+  <div class="info-block">
+    <div class="info-label">Account Number</div>
+    <div class="info-value">{{ claim_number }}</div>
+  </div>
+  <div class="info-block">
+    <div class="info-label">Statement Date</div>
+    <div class="info-value">{{ statement_date }}</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>CPT/HCPCS</th>
+      <th>Description</th>
+      <th>Qty</th>
+      <th class="amount">Billed</th>
+      <th class="amount">Allowed</th>
+      <th class="amount">Adjust.</th>
+      <th class="amount">You Owe</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+    <tr>
+      <td>{{ item.date_of_service }}</td>
+      <td>{{ item.cpt_code or item.hcpcs_code or '' }}{% if item.modifier_codes %}-{{ item.modifier_codes|join(',') }}{% endif %}</td>
+      <td>{{ item.description or '' }}</td>
+      <td>{{ item.units }}</td>
+      <td class="amount">${{ "%.2f"|format(item.billed_amount) }}</td>
+      <td class="amount">{% if item.allowed_amount is not none %}${{ "%.2f"|format(item.allowed_amount) }}{% endif %}</td>
+      <td class="amount">{% if item.adjustment_amount is not none %}${{ "%.2f"|format(item.adjustment_amount) }}{% endif %}</td>
+      <td class="amount">{% if item.patient_responsibility is not none %}${{ "%.2f"|format(item.patient_responsibility) }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="totals">
+  <table>
+    <tr>
+      <td>Total Charges:</td>
+      <td class="amount">${{ "%.2f"|format(totals.total_billed) }}</td>
+    </tr>
+    {% if totals.total_allowed is not none %}
+    <tr>
+      <td>Insurance Allowed:</td>
+      <td class="amount">${{ "%.2f"|format(totals.total_allowed) }}</td>
+    </tr>
+    {% endif %}
+    {% if totals.insurance_paid is not none %}
+    <tr>
+      <td>Insurance Paid:</td>
+      <td class="amount">${{ "%.2f"|format(totals.insurance_paid) }}</td>
+    </tr>
+    {% endif %}
+    <tr class="total-row">
+      <td>Amount Due:</td>
+      <td class="amount">${{ "%.2f"|format(totals.total_patient_responsibility or 0) }}</td>
+    </tr>
+  </table>
+</div>
+
+<div class="pay-box">
+  <div>PLEASE PAY THIS AMOUNT</div>
+  <div class="pay-amount">${{ "%.2f"|format(totals.total_patient_responsibility or 0) }}</div>
+</div>
+
+<div class="footer">
+  <p>If you have questions about this statement, please call our billing department.</p>
+  <p>Payment is due within 30 days of the statement date.</p>
+</div>
+
+</body>
+</html>
