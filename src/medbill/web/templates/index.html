@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}MedBill — Scan Your Medical Bill{% endblock %}
+{% block content %}
+<div class="text-center mb-12">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">Scan your medical bill</h1>
+    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        Upload a photo or PDF of your medical bill. MedBill will find billing errors,
+        explain charges in plain English, and flag overcharges.
+    </p>
+</div>
+
+<div id="upload-area"
+     hx-post="/scan"
+     hx-target="#results"
+     hx-swap="innerHTML"
+     hx-encoding="multipart/form-data"
+     hx-indicator="#loading">
+
+    <div class="upload-form bg-white rounded-xl border-2 border-dashed border-gray-300 p-12 text-center hover:border-blue-400 transition-colors">
+        <div class="mb-6">
+            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 14v20m-10-10h20M8 34V14a4 4 0 014-4h24a4 4 0 014 4v20a4 4 0 01-4 4H12a4 4 0 01-4-4z"/>
+            </svg>
+        </div>
+        <label class="cursor-pointer">
+            <span class="text-lg text-gray-700 font-medium">Choose a file or drag it here</span>
+            <input type="file" name="file" accept="image/*,.pdf" class="hidden"
+                   onchange="this.closest('[hx-post]').querySelector('button').click()">
+            <p class="text-sm text-gray-500 mt-2">PDF, JPG, PNG — up to 10MB</p>
+        </label>
+        <button type="submit" class="hidden">Submit</button>
+    </div>
+
+    <div id="loading" class="htmx-indicator text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-blue-600"></div>
+        <p class="text-gray-600 mt-4">Scanning your bill...</p>
+    </div>
+</div>
+
+<div class="mt-8 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
+    <div class="bg-white rounded-lg p-4">
+        <p class="font-semibold text-gray-700">Private</p>
+        <p>Processed in memory. Nothing stored.</p>
+    </div>
+    <div class="bg-white rounded-lg p-4">
+        <p class="font-semibold text-gray-700">Free</p>
+        <p>Open source. No accounts.</p>
+    </div>
+    <div class="bg-white rounded-lg p-4">
+        <p class="font-semibold text-gray-700">Local</p>
+        <p>Runs on your device. No cloud.</p>
+    </div>
+</div>
+
+<div id="results"></div>
+{% endblock %}
