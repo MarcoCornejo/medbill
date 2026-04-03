@@ -65,10 +65,10 @@ Schema:
   "service_dates": ["YYYY-MM-DD"],
   "line_items": [
     {
-      "cpt_code": "5-digit" | null,
-      "hcpcs_code": "letter+4digits" | null,
-      "icd10_codes": ["A00.0"],
-      "modifier_codes": ["25","59"],
+      "cpt_code": str | null,
+      "hcpcs_code": str | null,
+      "icd10_codes": [str],
+      "modifier_codes": [str],
       "description": str | null,
       "units": int,
       "date_of_service": "YYYY-MM-DD" | null,
@@ -167,6 +167,7 @@ _PLACEHOLDER_VALUES = {
     "str | null",
     "bool",
     "int",
+    "[str]",
     "5-digit",
     "letter+4digits",
     "A00.0",
