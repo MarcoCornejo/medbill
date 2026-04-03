@@ -104,8 +104,9 @@ def _print_result(result: AnalysisResult) -> None:
     if result.price_benchmarks:
         print("  PRICE COMPARISON (vs Medicare national rates):")
         for b in result.price_benchmarks:
-            flag = " !!" if b.ratio > 3 else ""
-            line = f"    CPT {b.cpt_code}: ${b.billed_amount} billed"
+            flag = " !!" if b.ratio > 4 else ""
+            desc = f" ({b.code_description})" if b.code_description else ""
+            line = f"    CPT {b.cpt_code}{desc}: ${b.billed_amount} billed"
             line += f" / ${b.medicare_rate} Medicare = {b.ratio}x{flag}"
             print(line)
         print()

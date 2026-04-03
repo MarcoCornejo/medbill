@@ -70,7 +70,13 @@
                 {% for item in result.extraction.line_items %}
                 <tr>
                     <td class="px-4 py-2 font-mono text-gray-800">{{ item.cpt_code or item.hcpcs_code or '—' }}</td>
-                    <td class="px-4 py-2 text-gray-600">{{ item.description or '—' }}</td>
+                    <td class="px-4 py-2 text-gray-600">
+                        {{ item.description or '' }}
+                        {% set benchmark = result.price_benchmarks | selectattr('line_index', 'equalto', loop.index0) | first %}
+                        {% if benchmark is defined and benchmark.code_description and not item.description %}
+                        <span class="text-gray-400 italic">{{ benchmark.code_description }}</span>
+                        {% endif %}
+                    </td>
                     <td class="px-4 py-2 text-right text-gray-800">
                         {% if item.billed_amount is not none %}${{ "%.2f"|format(item.billed_amount) }}{% else %}—{% endif %}
                     </td>
@@ -100,7 +106,14 @@
                     {% if item.cpt_code or item.hcpcs_code %}
                     <span class="font-mono text-sm text-gray-800">{{ item.cpt_code or item.hcpcs_code }}</span>
                     {% endif %}
-                    <p class="text-gray-600 text-sm mt-1">{{ item.description or 'No description' }}</p>
+                    <p class="text-gray-600 text-sm mt-1">
+                        {{ item.description or '' }}
+                        {% set benchmark = result.price_benchmarks | selectattr('line_index', 'equalto', loop.index0) | first %}
+                        {% if benchmark is defined and benchmark.code_description and not item.description %}
+                        <span class="text-gray-400 italic">{{ benchmark.code_description }}</span>
+                        {% endif %}
+                        {% if not item.description and (benchmark is not defined or not benchmark.code_description) %}No description{% endif %}
+                    </p>
                 </div>
                 {% if item.billed_amount is not none %}
                 <span class="font-semibold text-gray-900">${{ "%.2f"|format(item.billed_amount) }}</span>

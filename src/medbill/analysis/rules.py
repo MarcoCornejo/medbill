@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal
 
-from medbill.data import get_all_ncci_edits, get_medicare_rate, get_mue_limit
+from medbill.data import get_all_ncci_edits, get_code_description, get_medicare_rate, get_mue_limit
 from medbill.models import (
     AnalysisResult,
     BillingError,
@@ -231,6 +231,7 @@ def find_price_outliers(
             PriceBenchmark(
                 line_index=i,
                 cpt_code=code,
+                code_description=get_code_description(code),
                 billed_amount=item.billed_amount,
                 medicare_rate=medicare_rate,
                 ratio=round(ratio, 2),

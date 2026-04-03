@@ -38,6 +38,20 @@ def get_medicare_rate(hcpcs: str) -> Decimal | None:
         conn.close()
 
 
+def get_code_description(hcpcs: str) -> str | None:
+    """Look up the CMS short description for a CPT/HCPCS code."""
+    conn = _get_connection()
+    if conn is None:
+        return None
+    try:
+        row = conn.execute(
+            "SELECT short_description FROM medicare_rates WHERE hcpcs = ?", (hcpcs,)
+        ).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
 def get_ncci_edit(col1: str, col2: str) -> int | None:
     """Look up NCCI edit for a code pair. Returns modifier_indicator or None."""
     conn = _get_connection()

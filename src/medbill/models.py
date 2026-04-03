@@ -129,6 +129,7 @@ class PriceBenchmark(BaseModel):
 
     line_index: int
     cpt_code: str
+    code_description: str | None = None
     billed_amount: Decimal
     medicare_rate: Decimal
     ratio: float = Field(description="billed / medicare")
