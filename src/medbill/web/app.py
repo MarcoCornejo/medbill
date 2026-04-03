@@ -96,10 +96,12 @@ async def scan(request: Request, file: UploadFile) -> HTMLResponse:
         )
 
     finally:
-        # ALWAYS purge document content, even on exceptions
+        # ALWAYS purge ALL document content and PII, even on exceptions
         if file_bytes is not None:
             file_bytes.close()
-        del content, file_bytes
+        # These may not be defined if exception happened early
+        content = None  # noqa: F841
+        file_bytes = None  # noqa: F841
 
 
 @app.get("/health")

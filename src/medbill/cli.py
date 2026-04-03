@@ -84,11 +84,18 @@ def _print_result(result: AnalysisResult) -> None:
         print(f"  Total billed:  ${ext.totals.total_billed}")
     print()
 
+    # Warnings (revenue code bills, stale data, coverage gaps)
+    if result.warnings:
+        for warning in result.warnings:
+            print(f"  WARNING: {warning}")
+        print()
+
     # Errors
     if result.has_errors:
         print(f"  ISSUES FOUND: {result.error_count}")
         if result.total_estimated_overcharge > 0:
             print(f"  Estimated overcharge: ${result.total_estimated_overcharge}")
+        print("  (These are potential issues for review, not confirmed errors.)")
         print()
 
         for error in result.errors:
@@ -98,7 +105,11 @@ def _print_result(result: AnalysisResult) -> None:
                 print(f"     Estimated overcharge: ${error.estimated_overcharge}")
         print()
     else:
-        print("  No billing errors detected.\n")
+        print("  No issues found by current rules.")
+        print("  This does not guarantee your bill is error-free.")
+        if result.codes_checked > 0:
+            print(f"  ({result.codes_checked} codes checked, rates from CY{result.data_year})")
+        print()
 
     # Price benchmarks
     if result.price_benchmarks:

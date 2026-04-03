@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = Path(__file__).parent / "cms.db"
 
+_FALLBACK_DATA_YEAR = "2025"
+
 
 def _get_connection() -> sqlite3.Connection | None:
     """Get a read-only connection to the CMS database."""
@@ -22,6 +24,18 @@ def _get_connection() -> sqlite3.Connection | None:
         logger.warning("CMS database not found at %s. Using hardcoded defaults.", DB_PATH)
         return None
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+
+
+def get_data_year() -> str:
+    """Get the CMS data year (e.g., '2025')."""
+    conn = _get_connection()
+    if conn is None:
+        return _FALLBACK_DATA_YEAR
+    try:
+        row = conn.execute("SELECT value FROM metadata WHERE key = 'data_year'").fetchone()
+        return row[0] if row else _FALLBACK_DATA_YEAR
+    finally:
+        conn.close()
 
 
 def get_medicare_rate(hcpcs: str) -> Decimal | None:

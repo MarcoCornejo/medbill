@@ -138,14 +138,18 @@ class PriceBenchmark(BaseModel):
 class AnalysisResult(BaseModel):
     """Complete output of the rule engine.
 
-    Contains the original extraction plus all flagged errors
-    and price benchmarks.
+    Contains the original extraction plus all flagged errors,
+    price benchmarks, and coverage/quality metadata.
     """
 
     extraction: DocumentExtraction
     errors: list[BillingError] = Field(default_factory=list)
     price_benchmarks: list[PriceBenchmark] = Field(default_factory=list)
     total_estimated_overcharge: Decimal = Decimal("0")
+    warnings: list[str] = Field(default_factory=list)
+    data_year: str = ""
+    codes_checked: int = 0
+    codes_without_rates: int = 0
 
     @property
     def error_count(self) -> int:
@@ -154,6 +158,10 @@ class AnalysisResult(BaseModel):
     @property
     def has_errors(self) -> bool:
         return len(self.errors) > 0
+
+    @property
+    def has_warnings(self) -> bool:
+        return len(self.warnings) > 0
 
 
 # ---------------------------------------------------------------------------

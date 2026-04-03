@@ -11,7 +11,13 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal
 
-from medbill.data import get_all_ncci_edits, get_code_description, get_medicare_rate, get_mue_limit
+from medbill.data import (
+    get_all_ncci_edits,
+    get_code_description,
+    get_data_year,
+    get_medicare_rate,
+    get_mue_limit,
+)
 from medbill.models import (
     AnalysisResult,
     BillingError,
@@ -22,16 +28,39 @@ from medbill.models import (
 )
 
 MODIFIER_59_FAMILY = {"59", "XE", "XS", "XP", "XU"}
+BILATERAL_MODIFIERS = {"50", "LT", "RT"}
 
 # 4x threshold: median hospital markup is 2.5-3.5x Medicare.
 PRICE_OUTLIER_THRESHOLD = Decimal("4.0")
+
+# Minimum dollar difference to flag a price outlier (avoids noisy flags on $3 items)
+PRICE_OUTLIER_MIN_DIFFERENCE = Decimal("50.0")
 
 
 def analyze(extraction: DocumentExtraction) -> AnalysisResult:
     """Run all rules against an extraction and return the analysis result."""
     errors: list[BillingError] = []
     benchmarks: list[PriceBenchmark] = []
+    warnings: list[str] = []
 
+    # Check coverage: how many line items have recognizable codes?
+    total_items = len(extraction.line_items)
+    items_with_codes = sum(1 for item in extraction.line_items if item.cpt_code or item.hcpcs_code)
+
+    # Revenue-code-only bill detection (BLOCKER finding)
+    if total_items > 0 and items_with_codes == 0:
+        warnings.append(
+            "This bill appears to use revenue codes rather than CPT/HCPCS procedure codes. "
+            "Our analysis requires procedure codes to check for errors. "
+            "Request an itemized bill with CPT codes from your provider."
+        )
+    elif total_items > 2 and items_with_codes < total_items / 2:
+        warnings.append(
+            f"Only {items_with_codes} of {total_items} line items have recognizable "
+            f"procedure codes. Analysis may be incomplete."
+        )
+
+    # Run rules
     errors.extend(find_duplicate_charges(extraction))
     errors.extend(find_unbundled_codes(extraction))
     errors.extend(find_mue_violations(extraction))
@@ -39,6 +68,34 @@ def analyze(extraction: DocumentExtraction) -> AnalysisResult:
     price_errors, price_benchmarks = find_price_outliers(extraction)
     errors.extend(price_errors)
     benchmarks.extend(price_benchmarks)
+
+    # Count how many codes had Medicare rate data
+    codes_checked = len(
+        {
+            item.cpt_code or item.hcpcs_code
+            for item in extraction.line_items
+            if item.cpt_code or item.hcpcs_code
+        }
+    )
+    codes_with_rates = len({b.cpt_code for b in benchmarks})
+    codes_without = codes_checked - codes_with_rates
+
+    if codes_without > 0:
+        warnings.append(
+            f"{codes_without} of {codes_checked} procedure codes had no Medicare "
+            f"rate data for price comparison."
+        )
+
+    # Data vintage warning
+    data_year = get_data_year()
+    from datetime import date as _date
+
+    current_year = str(_date.today().year)
+    if data_year != current_year:
+        warnings.append(
+            f"Medicare rates are from CY{data_year}. "
+            f"Your bill may use {current_year} rates, which could differ."
+        )
 
     total_overcharge = sum(
         (e.estimated_overcharge for e in errors if e.estimated_overcharge is not None),
@@ -50,6 +107,10 @@ def analyze(extraction: DocumentExtraction) -> AnalysisResult:
         errors=errors,
         price_benchmarks=benchmarks,
         total_estimated_overcharge=total_overcharge,
+        warnings=warnings,
+        data_year=data_year,
+        codes_checked=codes_checked,
+        codes_without_rates=codes_without,
     )
 
 
@@ -59,13 +120,20 @@ def analyze(extraction: DocumentExtraction) -> AnalysisResult:
 
 
 def find_duplicate_charges(extraction: DocumentExtraction) -> list[BillingError]:
-    """Flag identical CPT code + date of service appearing more than once."""
+    """Flag identical CPT code + date of service appearing more than once.
+
+    Skips bilateral procedures (modifier -50, -LT, -RT) which legitimately
+    have the same code on the same date for different anatomic sites.
+    """
     errors: list[BillingError] = []
     seen: dict[tuple[str, str | None], list[int]] = defaultdict(list)
 
     for i, item in enumerate(extraction.line_items):
         code = item.cpt_code or item.hcpcs_code
         if code is None:
+            continue
+        # Skip if bilateral modifier present — legitimately same code, same date
+        if set(item.modifier_codes) & BILATERAL_MODIFIERS:
             continue
         date_str = str(item.date_of_service) if item.date_of_service else None
         seen[(code, date_str)].append(i)
@@ -238,7 +306,11 @@ def find_price_outliers(
             )
         )
 
-        if item.billed_amount > medicare_rate * PRICE_OUTLIER_THRESHOLD:
+        dollar_diff = item.billed_amount - medicare_rate
+        if (
+            item.billed_amount > medicare_rate * PRICE_OUTLIER_THRESHOLD
+            and dollar_diff >= PRICE_OUTLIER_MIN_DIFFERENCE
+        ):
             errors.append(
                 BillingError(
                     error_type=ErrorType.PRICE_OUTLIER,

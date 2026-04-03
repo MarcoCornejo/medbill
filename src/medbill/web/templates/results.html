@@ -1,6 +1,17 @@
+<!-- Warnings (revenue code bills, limited coverage, stale data) -->
+{% if result.warnings %}
+<div class="mt-8 space-y-2">
+    {% for warning in result.warnings %}
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+        {{ warning }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <!-- Summary banner -->
 {% if result.has_errors %}
-<div class="mt-8 bg-red-50 border border-red-200 rounded-xl p-6">
+<div class="mt-4 bg-red-50 border border-red-200 rounded-xl p-6">
     <h2 class="text-xl font-bold text-red-800 mb-1">
         {{ result.error_count }} potential issue{{ 's' if result.error_count != 1 else '' }} found
     </h2>
@@ -9,11 +20,16 @@
         Estimated overcharge: <span class="font-bold">${{ "%.2f"|format(result.total_estimated_overcharge) }}</span>
     </p>
     {% endif %}
+    <p class="text-red-600 text-sm mt-2">These are potential issues for your review, not confirmed errors. Always verify with your provider.</p>
 </div>
 {% else %}
-<div class="mt-8 bg-green-50 border border-green-200 rounded-xl p-6">
-    <h2 class="text-xl font-bold text-green-800">No billing errors detected</h2>
-    <p class="text-green-700">Based on available rules, this bill looks correct.</p>
+<div class="mt-4 bg-green-50 border border-green-200 rounded-xl p-6">
+    <h2 class="text-lg font-bold text-green-800">No issues found by current rules</h2>
+    <p class="text-green-700 text-sm">This does not guarantee your bill is error-free. Our analysis checks for duplicate charges, unbundled codes, excessive units, and price outliers against Medicare rates. It does not cover all possible billing errors.</p>
+    <p class="text-green-600 text-xs mt-1">
+        {% if result.codes_checked > 0 %}{{ result.codes_checked }} procedure code{{ 's' if result.codes_checked != 1 else '' }} checked.{% endif %}
+        {% if result.data_year %}Rates: CY{{ result.data_year }}.{% endif %}
+    </p>
 </div>
 {% endif %}
 
@@ -151,13 +167,22 @@
 </div>
 {% endif %}
 
+<!-- Price comparison context -->
+{% if result.price_benchmarks %}
+<div class="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
+    <strong>About price comparisons:</strong> Medicare rates shown are national physician (non-facility) rates from CY{{ result.data_year or '2025' }}.
+    Hospital facility charges use different pricing systems and commonly exceed these rates by 3-5x.
+    Ratios above this range may warrant further review but are not necessarily errors.
+</div>
+{% endif %}
+
 <!-- What to do next -->
 <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
     <h4 class="font-semibold mb-2">What to do next</h4>
     <ol class="list-decimal list-inside space-y-1">
-        <li>Review the flagged issues above carefully</li>
+        <li>Review the flagged issues above carefully — these are potential issues, not confirmed errors</li>
         <li>Call your provider's billing department and reference the specific charges</li>
-        <li>Request an itemized bill if you don't have one</li>
+        <li>Request an itemized bill with CPT codes if you don't have one</li>
         <li>If your claim was denied, you have the right to appeal</li>
     </ol>
     <p class="mt-2 text-xs text-blue-600">
