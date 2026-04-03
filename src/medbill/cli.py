@@ -110,6 +110,11 @@ def _print_result(result: AnalysisResult) -> None:
             print(line)
         print()
 
+    # Disclaimer
+    print("  NOTE: MedBill is an informational tool. Output may contain errors.")
+    print("  Do not rely on these results without review by a qualified professional.")
+    print()
+
 
 def _severity_icon(severity: Severity) -> str:
     if severity == Severity.ERROR:

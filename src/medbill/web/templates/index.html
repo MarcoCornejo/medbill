@@ -1,13 +1,29 @@
 {% extends "base.html" %}
 {% block title %}MedBill — Scan Your Medical Bill{% endblock %}
 {% block content %}
-<div class="text-center mb-12">
-    <h1 class="text-4xl font-bold text-gray-900 mb-4">Scan your medical bill</h1>
+<div class="text-center mb-8">
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Scan your medical bill</h1>
     <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-        Upload a photo or PDF of your medical bill. MedBill will find billing errors,
-        explain charges in plain English, and flag overcharges.
+        Upload a photo or PDF of your medical bill. MedBill will flag billing errors
+        and compare charges against Medicare rates.
     </p>
 </div>
+
+<!-- Privacy badge -->
+<div class="flex items-center justify-center mb-6 text-sm text-gray-600">
+    <svg class="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+    </svg>
+    Your bill never leaves your device. Nothing is stored.
+</div>
+
+{% if extractor == "mock" %}
+<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-sm text-yellow-800">
+    <strong>Demo mode:</strong> Ollama is not running. Results use sample data.
+    For real extraction, <a href="https://ollama.com" class="underline">install Ollama</a>
+    and run <code class="bg-yellow-100 px-1 rounded">ollama pull glm-ocr</code>.
+</div>
+{% endif %}
 
 <div id="upload-area"
      hx-post="/scan"
@@ -16,28 +32,47 @@
      hx-encoding="multipart/form-data"
      hx-indicator="#loading">
 
-    <div class="upload-form bg-white rounded-xl border-2 border-dashed border-gray-300 p-12 text-center hover:border-blue-400 transition-colors">
+    <div class="upload-form bg-white rounded-xl border-2 border-dashed border-gray-300 p-8 sm:p-12 text-center hover:border-blue-400 transition-colors">
         <div class="mb-6">
-            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+            <svg class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 14v20m-10-10h20M8 34V14a4 4 0 014-4h24a4 4 0 014 4v20a4 4 0 01-4 4H12a4 4 0 01-4-4z"/>
             </svg>
         </div>
         <label class="cursor-pointer">
-            <span class="text-lg text-gray-700 font-medium">Choose a file or drag it here</span>
-            <input type="file" name="file" accept="image/*,.pdf" class="hidden"
+            <span class="text-lg text-gray-700 font-medium">Choose a file or take a photo</span>
+            <input type="file" name="file" accept="image/*,.pdf" class="sr-only" aria-label="Upload your medical bill"
                    onchange="this.closest('[hx-post]').querySelector('button').click()">
             <p class="text-sm text-gray-500 mt-2">PDF, JPG, PNG — up to 10MB</p>
         </label>
         <button type="submit" class="hidden">Submit</button>
     </div>
 
-    <div id="loading" class="htmx-indicator text-center py-12">
+    <div id="loading" class="htmx-indicator text-center py-12" aria-live="assertive" role="status">
         <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-blue-600"></div>
-        <p class="text-gray-600 mt-4">Scanning your bill...</p>
+        <p class="text-gray-600 mt-4" id="loading-text">Reading your document...</p>
+        <p class="text-gray-400 text-sm mt-1">This usually takes 10-15 seconds</p>
+        <script>
+            // Cycle through progress messages
+            (function() {
+                var msgs = [
+                    "Reading your document...",
+                    "Identifying line items...",
+                    "Checking for billing errors...",
+                    "Comparing against Medicare rates...",
+                    "Generating your report..."
+                ];
+                var i = 0;
+                setInterval(function() {
+                    i = Math.min(i + 1, msgs.length - 1);
+                    var el = document.getElementById("loading-text");
+                    if (el) el.textContent = msgs[i];
+                }, 3000);
+            })();
+        </script>
     </div>
 </div>
 
-<div class="mt-8 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
+<div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-sm text-gray-600">
     <div class="bg-white rounded-lg p-4">
         <p class="font-semibold text-gray-700">Private</p>
         <p>Processed in memory. Nothing stored.</p>
@@ -52,5 +87,5 @@
     </div>
 </div>
 
-<div id="results"></div>
+<div id="results" aria-live="polite"></div>
 {% endblock %}

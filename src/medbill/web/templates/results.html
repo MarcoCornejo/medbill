@@ -1,10 +1,11 @@
+<!-- Summary banner -->
 {% if result.has_errors %}
 <div class="mt-8 bg-red-50 border border-red-200 rounded-xl p-6">
     <h2 class="text-xl font-bold text-red-800 mb-1">
         {{ result.error_count }} potential issue{{ 's' if result.error_count != 1 else '' }} found
     </h2>
     {% if result.total_estimated_overcharge > 0 %}
-    <p class="text-red-700">
+    <p class="text-red-700 text-lg">
         Estimated overcharge: <span class="font-bold">${{ "%.2f"|format(result.total_estimated_overcharge) }}</span>
     </p>
     {% endif %}
@@ -16,13 +17,20 @@
 </div>
 {% endif %}
 
+{% if extractor == "mock" %}
+<div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+    These results use <strong>sample data</strong> (Ollama not running). Install Ollama and run
+    <code class="bg-yellow-100 px-1 rounded">ollama pull glm-ocr</code> for real document extraction.
+</div>
+{% endif %}
+
 <!-- Errors -->
 {% if result.errors %}
 <div class="mt-6 space-y-4">
     <h3 class="text-lg font-semibold text-gray-900">Flagged Issues</h3>
     {% for error in result.errors %}
     <div class="bg-white rounded-lg border p-4 {% if error.severity.value == 'ERROR' %}border-red-300{% elif error.severity.value == 'WARNING' %}border-yellow-300{% else %}border-blue-300{% endif %}">
-        <div class="flex items-start justify-between">
+        <div class="flex items-start justify-between flex-wrap gap-2">
             <div>
                 <span class="inline-block px-2 py-0.5 rounded text-xs font-medium
                     {% if error.severity.value == 'ERROR' %}bg-red-100 text-red-800
@@ -42,23 +50,25 @@
 </div>
 {% endif %}
 
-<!-- Line Items -->
+<!-- Line Items: Desktop table, mobile cards -->
 <div class="mt-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-3">Line Items</h3>
-    <div class="bg-white rounded-lg border overflow-hidden">
+
+    <!-- Desktop table (hidden on mobile) -->
+    <div class="hidden sm:block bg-white rounded-lg border overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-4 py-2 text-left text-gray-600">Code</th>
                     <th class="px-4 py-2 text-left text-gray-600">Description</th>
                     <th class="px-4 py-2 text-right text-gray-600">Billed</th>
-                    <th class="px-4 py-2 text-right text-gray-600">Medicare Rate</th>
+                    <th class="px-4 py-2 text-right text-gray-600">Medicare</th>
                     <th class="px-4 py-2 text-right text-gray-600">Ratio</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 {% for item in result.extraction.line_items %}
-                <tr class="{% if loop.index0 in result.errors | map(attribute='affected_line_indices') | sum(start=[]) %}bg-red-50{% endif %}">
+                <tr>
                     <td class="px-4 py-2 font-mono text-gray-800">{{ item.cpt_code or item.hcpcs_code or '—' }}</td>
                     <td class="px-4 py-2 text-gray-600">{{ item.description or '—' }}</td>
                     <td class="px-4 py-2 text-right text-gray-800">
@@ -70,7 +80,7 @@
                     </td>
                     <td class="px-4 py-2 text-right">
                         {% if benchmark is defined %}
-                        <span class="{% if benchmark.ratio > 3 %}text-red-600 font-semibold{% elif benchmark.ratio > 2 %}text-yellow-600{% else %}text-gray-500{% endif %}">
+                        <span class="{% if benchmark.ratio > 4 %}text-red-600 font-semibold{% elif benchmark.ratio > 3 %}text-yellow-600{% else %}text-gray-500{% endif %}">
                             {{ benchmark.ratio }}x
                         </span>
                         {% else %}—{% endif %}
@@ -79,6 +89,34 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile cards (hidden on desktop) -->
+    <div class="sm:hidden space-y-3">
+        {% for item in result.extraction.line_items %}
+        <div class="bg-white rounded-lg border p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    {% if item.cpt_code or item.hcpcs_code %}
+                    <span class="font-mono text-sm text-gray-800">{{ item.cpt_code or item.hcpcs_code }}</span>
+                    {% endif %}
+                    <p class="text-gray-600 text-sm mt-1">{{ item.description or 'No description' }}</p>
+                </div>
+                {% if item.billed_amount is not none %}
+                <span class="font-semibold text-gray-900">${{ "%.2f"|format(item.billed_amount) }}</span>
+                {% endif %}
+            </div>
+            {% set benchmark = result.price_benchmarks | selectattr('line_index', 'equalto', loop.index0) | first %}
+            {% if benchmark is defined %}
+            <div class="mt-2 text-xs text-gray-500 flex justify-between">
+                <span>Medicare: ${{ "%.2f"|format(benchmark.medicare_rate) }}</span>
+                <span class="{% if benchmark.ratio > 4 %}text-red-600 font-semibold{% elif benchmark.ratio > 3 %}text-yellow-600{% else %}text-gray-500{% endif %}">
+                    {{ benchmark.ratio }}x Medicare
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
 </div>
 
@@ -100,7 +138,23 @@
 </div>
 {% endif %}
 
+<!-- What to do next -->
+<div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+    <h4 class="font-semibold mb-2">What to do next</h4>
+    <ol class="list-decimal list-inside space-y-1">
+        <li>Review the flagged issues above carefully</li>
+        <li>Call your provider's billing department and reference the specific charges</li>
+        <li>Request an itemized bill if you don't have one</li>
+        <li>If your claim was denied, you have the right to appeal</li>
+    </ol>
+    <p class="mt-2 text-xs text-blue-600">
+        Source: Medicare rates from
+        <a href="https://www.cms.gov/medicare/payment/physician-fee-schedule" class="underline">CMS Physician Fee Schedule</a>.
+        NCCI edits from <a href="https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits" class="underline">CMS NCCI</a>.
+    </p>
+</div>
+
 <!-- Scan another -->
-<div class="mt-8 text-center">
+<div class="mt-6 text-center">
     <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">Scan another bill</a>
 </div>

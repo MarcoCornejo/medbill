@@ -228,7 +228,7 @@ class TestWebE2E:
     def test_landing_page_has_privacy_disclaimer(self, client: TestClient) -> None:
         resp = client.get("/")
         assert "Nothing is stored" in resp.text
-        assert "not legal or medical advice" in resp.text
+        assert "not a law firm" in resp.text or "informational tool" in resp.text
 
 
 # ---------------------------------------------------------------------------
