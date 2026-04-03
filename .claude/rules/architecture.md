@@ -9,7 +9,7 @@ globs: ["**/*.py", "**/*.md", "Makefile", "pyproject.toml"]
 
 ```
 Document (photo/PDF)
-    → Qwen2.5-VL-3B (extraction) → Structured JSON
+    → GLM-OCR (extraction) → Structured JSON
     → Rule Engine (analysis) → Error flags + price benchmarks
     → Templates/SLM (explanation) → Plain English + appeal letter
     → Results to user, document purged, anonymous counter +1
@@ -17,12 +17,13 @@ Document (photo/PDF)
 
 ## Layer Responsibilities
 
-### Layer 1: Document Extraction (Qwen2.5-VL-3B)
-- Input: document image + extraction prompt
+### Layer 1: Document Extraction (GLM-OCR)
+- Input: document image + extraction prompt (JSON schema)
 - Output: structured JSON (patient name, provider, line items with codes and amounts, dates, totals)
-- Runs locally on consumer hardware (fits 24GB VRAM)
-- Base model: Qwen2.5-VL-3B-Instruct. Fine-tuned via LoRA for medical billing documents.
-- Why Qwen over GLM-OCR: native structured JSON output, strong table understanding (row/column relationships), instruction-following capability. GLM-OCR is an OCR model (reads text); Qwen is a VLM (understands document structure).
+- Runs locally on consumer hardware (~4GB VRAM, runs on MacBook M1/M2 8GB via Ollama)
+- Base model: GLM-OCR (0.9B params, zai-org/GLM-OCR). Fine-tuned via LoRA for medical billing documents.
+- GLM-OCR is a VLM (CogViT encoder + GLM-0.5B decoder), NOT just an OCR model. It has native JSON schema extraction, table understanding (77.6 on table tests), and scores 94.62 on OmniDocBench V1.5 (#1).
+- Fallback: Qwen2.5-VL-3B if GLM-OCR proves insufficient after benchmarking. Granite-Docling-258M as future lightweight option.
 
 ### Layer 2: Rule Engine (Pure Python)
 - Input: structured extraction JSON

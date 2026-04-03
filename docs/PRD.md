@@ -39,9 +39,9 @@ Each phase delivers a standalone, usable artifact. No phase depends on a future 
 | Build hash manifest for integrity | `manifest.json` |
 | Implement all metrics (MedBillScore, Code F1, Amount Accuracy, etc.) | `metrics.py` |
 | Build evaluator framework with model runner protocol | `evaluator.py`, `runners/` |
-| Implement Qwen2.5-VL-3B and Textract baselines | Initial runners |
+| Implement GLM-OCR and Textract baselines | Initial runners |
 | Generate leaderboard | `leaderboard.md` |
-| Build CLI: `medbillbench evaluate --model qwen-vl` | Standalone tool |
+| Build CLI: `medbillbench evaluate --model glm-ocr` | Standalone tool |
 
 **Deliverable:** `make evaluate-all` runs baselines and produces a leaderboard.
 
@@ -49,7 +49,7 @@ Each phase delivers a standalone, usable artifact. No phase depends on a future 
 
 ## Phase 3: Fine-Tuning (Week 4)
 
-**Goal:** A fine-tuned Qwen2.5-VL-3B adapter that beats the base model on MedBillBench.
+**Goal:** A fine-tuned GLM-OCR adapter that beats the base model on MedBillBench.
 
 | Task | Output |
 |---|---|

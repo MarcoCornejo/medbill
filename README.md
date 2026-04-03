@@ -15,7 +15,7 @@ Upload bill photo/PDF
         │
         ▼
 ┌──────────────────┐
-│  Qwen2.5-VL-3B         │  Extracts text and structure from document
+│  GLM-OCR         │  Extracts text and structure from document
 │  (on-device)     │  Fine-tuned for medical billing layouts
 └────────┬─────────┘
          │
@@ -76,7 +76,7 @@ medbill/
 ├── src/medbill/      # Core library (OCR, rules, explanations)
 ├── medbillgen/          # Synthetic medical document generator
 ├── medbillbench/        # Benchmark for medical billing document AI
-├── training/            # Fine-tuning pipeline (Qwen2.5-VL-3B via LoRA)
+├── training/            # Fine-tuning pipeline (GLM-OCR via LoRA)
 ├── docs/                # Architecture, benchmark methodology, fine-tuning guide
 └── tests/
 ```
@@ -87,7 +87,7 @@ medbill/
 |---|---|---|
 | **MedBillGen** | Synthetic document generator | Training data factory — photorealistic bills, EOBs, denial letters |
 | **MedBillBench** | Public benchmark (500 docs) | First benchmark for medical billing document understanding |
-| **MedBill-OCR** | Fine-tuned Qwen2.5-VL-3B (LoRA) | Specialized extraction model, runs on consumer hardware |
+| **MedBill-OCR** | Fine-tuned GLM-OCR (LoRA) | Specialized extraction model, runs on consumer hardware |
 | **MedBill App** | Web + CLI interface | The product people actually use |
 
 ## Project Status
