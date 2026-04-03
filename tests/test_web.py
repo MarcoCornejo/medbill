@@ -5,12 +5,19 @@ from io import BytesIO
 import pytest
 from fastapi.testclient import TestClient
 
+from medbill.core.ocr import MockExtractor
 from medbill.web.app import app
 
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app)
+    """Use MockExtractor regardless of whether Ollama is running."""
+    import medbill.web.app as _app
+
+    original = _app._extractor
+    _app._extractor = MockExtractor()
+    yield TestClient(app)
+    _app._extractor = original
 
 
 class TestHealth:

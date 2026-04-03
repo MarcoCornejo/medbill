@@ -182,7 +182,14 @@ class TestRuleEngineEdgeCases:
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app)
+    """Force MockExtractor in web tests regardless of Ollama state."""
+    import medbill.web.app as _app
+    from medbill.core.ocr import MockExtractor
+
+    original = _app._extractor
+    _app._extractor = MockExtractor()
+    yield TestClient(app)
+    _app._extractor = original
 
 
 class TestWebE2E:
@@ -232,7 +239,10 @@ class TestWebE2E:
 class TestCLIE2E:
     def test_json_output_validates_as_analysis_result(self, tmp_path: Path) -> None:
         """CLI --json output must be a valid AnalysisResult."""
+        from unittest.mock import patch
+
         from medbill.cli import main
+        from medbill.core.ocr import MockExtractor
 
         dummy = tmp_path / "bill.pdf"
         dummy.write_bytes(b"fake")
@@ -244,7 +254,8 @@ class TestCLIE2E:
         old_stdout = sys.stdout
         sys.stdout = captured
         try:
-            ret = main(["scan", "--json", str(dummy)])
+            with patch("medbill.cli.create_extractor", return_value=(MockExtractor(), "mock")):
+                ret = main(["scan", "--json", str(dummy)])
         finally:
             sys.stdout = old_stdout
 

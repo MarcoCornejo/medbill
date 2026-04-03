@@ -25,6 +25,7 @@ dependencies = [
     "pillow>=11.0",
     "pydantic>=2.10",
     "httpx>=0.28",
+    "pymupdf>=1.27.2.2",
 ]
 
 [project.optional-dependencies]

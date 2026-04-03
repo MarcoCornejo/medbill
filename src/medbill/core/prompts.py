@@ -129,6 +129,7 @@ def parse_extraction(raw: str) -> DocumentExtraction:
     """
     cleaned = _clean_raw_output(raw)
     data = _parse_json(cleaned)
+    data = _sanitize_model_output(data)
     return DocumentExtraction.model_validate(data)
 
 
@@ -157,6 +158,93 @@ def _clean_raw_output(raw: str) -> str:
         text = match.group(1).strip()
 
     return text
+
+
+# Values that are schema placeholders echoed back by the model
+_PLACEHOLDER_VALUES = {
+    "YYYY-MM-DD",
+    "str",
+    "str | null",
+    "bool",
+    "int",
+    "5-digit",
+    "letter+4digits",
+    "A00.0",
+}
+
+
+def _sanitize_model_output(data: dict[str, Any]) -> dict[str, Any]:
+    """Clean up common VLM output quirks before Pydantic validation.
+
+    Handles:
+    - Empty strings -> None (for optional fields)
+    - Schema placeholder values -> None (model echoed the template)
+    - Single values where lists expected -> wrapped in list
+    - Hallucinated denial fields on non-denial documents
+    """
+    # Convert empty strings to None at top level
+    for key in ("patient_name", "patient_dob", "provider_name", "provider_npi", "claim_number"):
+        if isinstance(data.get(key), str) and (
+            data[key].strip() == "" or data[key] in _PLACEHOLDER_VALUES
+        ):
+            data[key] = None
+
+    # service_dates: ensure it's a list
+    sd = data.get("service_dates")
+    if isinstance(sd, str):
+        data["service_dates"] = [sd] if sd and sd not in _PLACEHOLDER_VALUES else []
+
+    # Clean line items
+    for item in data.get("line_items", []):
+        if not isinstance(item, dict):
+            continue
+        # Null out placeholder codes
+        for code_field in ("cpt_code", "hcpcs_code"):
+            val = item.get(code_field)
+            if isinstance(val, str) and (val in _PLACEHOLDER_VALUES or val.strip() == ""):
+                item[code_field] = None
+        # Clean placeholder lists
+        for list_field in ("icd10_codes", "modifier_codes"):
+            lst = item.get(list_field, [])
+            if isinstance(lst, list):
+                item[list_field] = [v for v in lst if v not in _PLACEHOLDER_VALUES]
+        # Empty string fields -> None
+        for str_field in ("description", "date_of_service"):
+            val = item.get(str_field)
+            if isinstance(val, str) and (val.strip() == "" or val in _PLACEHOLDER_VALUES):
+                item[str_field] = None
+        # Empty string units -> default 1
+        if isinstance(item.get("units"), str) and item["units"].strip() == "":
+            item["units"] = 1
+
+    # Clean denial: if not explicitly denied, reset placeholder values
+    denial = data.get("denial", {})
+    if isinstance(denial, dict):
+        for field in ("denial_reason_text", "appeal_deadline"):
+            val = denial.get(field)
+            if isinstance(val, str) and (val.strip() == "" or val in _PLACEHOLDER_VALUES):
+                denial[field] = None
+        # Clean placeholder codes from denial
+        for code_list in ("carc_codes", "rarc_codes"):
+            lst = denial.get(code_list, [])
+            if isinstance(lst, list):
+                denial[code_list] = [v for v in lst if v not in _PLACEHOLDER_VALUES]
+        # If all denial fields are empty/placeholder, it's not a real denial
+        if (
+            not denial.get("carc_codes")
+            and not denial.get("rarc_codes")
+            and not denial.get("denial_reason_text")
+        ):
+            denial["is_denied"] = False
+
+    # Clean totals empty strings
+    totals = data.get("totals", {})
+    if isinstance(totals, dict):
+        for key, val in list(totals.items()):
+            if isinstance(val, str) and val.strip() == "":
+                totals[key] = None
+
+    return data
 
 
 def _parse_json(text: str) -> dict[str, Any]:

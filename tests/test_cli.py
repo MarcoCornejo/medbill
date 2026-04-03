@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from medbill.cli import main
+from medbill.core.ocr import MockExtractor
 
 
 @pytest.fixture
@@ -36,7 +38,10 @@ class TestCLI:
         captured = capsys.readouterr()
         assert "not found" in captured.err
 
-    def test_scan_text_output(self, dummy_file: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    @patch("medbill.cli.create_extractor", return_value=(MockExtractor(), "mock"))
+    def test_scan_text_output(
+        self, _mock: object, dummy_file: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         ret = main(["scan", str(dummy_file)])
         assert ret == 0
         captured = capsys.readouterr()
@@ -54,7 +59,10 @@ class TestCLI:
         assert "PRICE COMPARISON" in output
         assert "Medicare" in output
 
-    def test_scan_json_output(self, dummy_file: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    @patch("medbill.cli.create_extractor", return_value=(MockExtractor(), "mock"))
+    def test_scan_json_output(
+        self, _mock: object, dummy_file: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         ret = main(["scan", "--json", str(dummy_file)])
         assert ret == 0
         captured = capsys.readouterr()
@@ -72,8 +80,9 @@ class TestCLIIntegration:
     Validates the full pipeline works as a vertical slice.
     """
 
+    @patch("medbill.cli.create_extractor", return_value=(MockExtractor(), "mock"))
     def test_full_pipeline_produces_actionable_output(
-        self, dummy_file: Path, capsys: pytest.CaptureFixture[str]
+        self, _mock: object, dummy_file: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         ret = main(["scan", "--json", str(dummy_file)])
         assert ret == 0

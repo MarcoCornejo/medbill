@@ -18,7 +18,6 @@ from fastapi.templating import Jinja2Templates
 from medbill import __version__
 from medbill.analysis.rules import analyze
 from medbill.core.ocr import ExtractionError, create_extractor
-from medbill.models import HealthResponse
 
 WEB_DIR = Path(__file__).parent
 TEMPLATE_DIR = WEB_DIR / "templates"
