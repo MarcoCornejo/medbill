@@ -1,6 +1,10 @@
-# docker compose up --build
-# First run pulls GLM-OCR (~600MB, cached in volume for subsequent runs)
-# Open http://localhost:8000
+# Prerequisites:
+#   1. Install Ollama: https://ollama.com
+#   2. ollama pull glm-ocr
+#   3. docker compose up --build
+#
+# Ollama runs on your host machine for native performance (~12-17s/page).
+# The container runs only the web app and connects to host Ollama.
 
 services:
   medbill:
@@ -8,18 +12,8 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
       - MEDBILL_MODEL=glm-ocr
-      - MEDBILL_OCR_TIMEOUT=600
-    volumes:
-      - ollama-models:/root/.ollama
-    # Uncomment below for GPU passthrough (requires nvidia-container-toolkit):
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
-volumes:
-  ollama-models:
+      - MEDBILL_OCR_TIMEOUT=120
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
