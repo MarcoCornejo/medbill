@@ -1,4 +1,5 @@
 # docker compose up --build
+# First run pulls GLM-OCR (~600MB, cached in volume for subsequent runs)
 # Open http://localhost:8000
 
 services:
@@ -9,6 +10,8 @@ services:
     environment:
       - MEDBILL_MODEL=glm-ocr
       - MEDBILL_OCR_TIMEOUT=120
+    volumes:
+      - ollama-models:/root/.ollama
     # Uncomment below for GPU passthrough (requires nvidia-container-toolkit):
     # deploy:
     #   resources:
@@ -17,3 +20,6 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
+
+volumes:
+  ollama-models:

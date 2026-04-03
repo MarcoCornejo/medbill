@@ -16,5 +16,8 @@ test-samples/
 training/
 medbillbench/
 docs/
-*.md
-!pyproject.toml
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+CLAUDE.md
+.claude/

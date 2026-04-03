@@ -13,17 +13,24 @@ for i in $(seq 1 30); do
         break
     fi
     if [ "$i" -eq 30 ]; then
-        echo "[medbill] ERROR: Ollama failed to start within 30s" >&2
-        exit 1
+        echo "[medbill] WARNING: Ollama failed to start. Running in mock mode."
+        exec uvicorn medbill.web.app:app --host 0.0.0.0 --port 8000 --workers 1
     fi
     sleep 1
 done
 
-# Verify the model is available
-echo "[medbill] Verifying model '${MEDBILL_MODEL:-glm-ocr}' is loaded..."
-if ! ollama list | grep -q "${MEDBILL_MODEL:-glm-ocr}"; then
-    echo "[medbill] WARNING: Model not found. Pulling ${MEDBILL_MODEL:-glm-ocr}..."
-    ollama pull "${MEDBILL_MODEL:-glm-ocr}"
+# Try to verify/pull the model (non-fatal if no network)
+MODEL="${MEDBILL_MODEL:-glm-ocr}"
+if ollama list 2>/dev/null | grep -q "$MODEL"; then
+    echo "[medbill] Model '$MODEL' is available."
+else
+    echo "[medbill] Model '$MODEL' not found. Attempting pull..."
+    if ollama pull "$MODEL" 2>&1; then
+        echo "[medbill] Model pulled successfully."
+    else
+        echo "[medbill] WARNING: Could not pull model. App will use mock extractor."
+        echo "[medbill] Pre-pull the model: docker exec <container> ollama pull $MODEL"
+    fi
 fi
 
 echo "[medbill] Starting FastAPI on port 8000..."
