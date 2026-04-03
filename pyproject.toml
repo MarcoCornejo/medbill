@@ -1,5 +1,5 @@
 [project]
-name = "billshield"
+name = "medbill"
 version = "0.1.0"
 description = "Open-source, privacy-first medical bill scanner. Finds errors, explains charges, generates appeals."
 readme = "README.md"
@@ -58,7 +58,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/billshield"]
+source = ["src/medbill"]
 
 [tool.coverage.report]
 fail_under = 80

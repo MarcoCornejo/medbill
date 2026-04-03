@@ -1,10 +1,10 @@
-# BillShield-OCR — Fine-Tuning Methodology
+# MedBill-OCR — Fine-Tuning Methodology
 
 **Base Model:** GLM-OCR (0.9B parameters)
 **Method:** LoRA via LLaMA-Factory
 **Training Data:** MedBillGen synthetic documents
 **Evaluation:** MedBillBench
-**HuggingFace:** `billshield/billshield-ocr-lora` *(planned)*
+**HuggingFace:** `medbill/medbill-ocr-lora` *(planned)*
 
 ## Hypothesis
 

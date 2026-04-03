@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in BillShield
+description: Report a bug in MedBill
 labels: ["bug"]
 body:
   - type: markdown
@@ -39,7 +39,7 @@ body:
         How can we reproduce this? Use synthetic documents from medbillgen, NOT real medical documents.
       placeholder: |
         1. Generate a test document: medbillgen generate --count 1 --seed 99
-        2. Run: billshield scan output/test_doc.png
+        2. Run: medbill scan output/test_doc.png
         3. See error...
   - type: textarea
     id: environment

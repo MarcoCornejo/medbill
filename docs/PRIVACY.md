@@ -4,11 +4,11 @@
 
 ## Summary
 
-BillShield processes medical billing documents entirely on-device or in ephemeral server memory. We do not store, transmit, or retain your documents or any data extracted from them.
+MedBill processes medical billing documents entirely on-device or in ephemeral server memory. We do not store, transmit, or retain your documents or any data extracted from them.
 
 ## What We Process
 
-When you use BillShield to scan a document:
+When you use MedBill to scan a document:
 - The document image is loaded into memory
 - Text and structure are extracted by the OCR model
 - Billing errors are detected by the rule engine
@@ -22,7 +22,7 @@ No step in this pipeline writes to disk, transmits over a network, or persists a
 
 ### Anonymous Impact Counters (Hosted Version Only)
 
-If you use a hosted instance of BillShield, the following **anonymous aggregate counters** are incremented:
+If you use a hosted instance of MedBill, the following **anonymous aggregate counters** are incremented:
 
 | Counter | Example |
 |---|---|
@@ -41,7 +41,7 @@ No individual action can be traced back to a specific user.
 
 ### Self-Hosted Instances
 
-Self-hosted BillShield instances have counters disabled by default. Operators may enable them for their own internal tracking.
+Self-hosted MedBill instances have counters disabled by default. Operators may enable them for their own internal tracking.
 
 ### Server Access Logs
 
@@ -66,15 +66,15 @@ Self-hosters should configure log rotation per their own privacy requirements.
 
 ## Cookies
 
-BillShield uses **zero cookies**. No session cookies, no tracking cookies, no third-party cookies.
+MedBill uses **zero cookies**. No session cookies, no tracking cookies, no third-party cookies.
 
 ## Children's Data
 
-BillShield does not collect any personal data from users of any age. Medical bills involving minors are processed with the same ephemeral, no-storage architecture as all other documents.
+MedBill does not collect any personal data from users of any age. Medical bills involving minors are processed with the same ephemeral, no-storage architecture as all other documents.
 
 ## Third-Party Services
 
-BillShield's core processing uses no third-party services. All processing happens locally or on the server you choose.
+MedBill's core processing uses no third-party services. All processing happens locally or on the server you choose.
 
 If an optional privacy-first analytics tool (e.g., Plausible, Umami) is enabled on a hosted instance, it will be self-hosted, cookieless, and compliant with GDPR without requiring consent banners.
 
@@ -88,13 +88,13 @@ For users in the European Economic Area or United Kingdom:
 
 ## HIPAA
 
-BillShield does not store, transmit, or maintain Protected Health Information (PHI). In its default configuration, it does not meet the definition of a HIPAA "covered entity" or "business associate." See [SECURITY.md](SECURITY.md) for details.
+MedBill does not store, transmit, or maintain Protected Health Information (PHI). In its default configuration, it does not meet the definition of a HIPAA "covered entity" or "business associate." See [SECURITY.md](SECURITY.md) for details.
 
-Organizations deploying BillShield in a clinical setting should conduct their own compliance review.
+Organizations deploying MedBill in a clinical setting should conduct their own compliance review.
 
 ## Contact
 
-Privacy questions: privacy@billshield.dev
+Privacy questions: privacy@medbill.dev
 
 ## Changes
 

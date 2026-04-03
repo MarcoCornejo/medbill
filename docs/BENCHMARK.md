@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0
 **License:** CC-BY-4.0
-**HuggingFace:** `billshield/medbillbench` *(planned)*
+**HuggingFace:** `medbill/medbillbench` *(planned)*
 
 ## Motivation
 
@@ -50,7 +50,7 @@ MedBillScore = (
 
 | Model | Type | Size | Expected Range |
 |---|---|---|---|
-| BillShield-OCR (ours) | Fine-tuned GLM-OCR | 0.9B + LoRA | 87-92 |
+| MedBill-OCR (ours) | Fine-tuned GLM-OCR | 0.9B + LoRA | 87-92 |
 | GLM-OCR (base) | Open-source VLM | 0.9B | 78-84 |
 | GPT-4V | Commercial VLM | Unknown | 76-82 |
 | AWS Textract | Commercial OCR | Unknown | 68-74 |
@@ -73,7 +73,7 @@ MedBillScore = (
   author={Cornejo, Marco},
   year={2026},
   publisher={HuggingFace},
-  url={https://huggingface.co/datasets/billshield/medbillbench},
+  url={https://huggingface.co/datasets/medbill/medbillbench},
   license={CC-BY-4.0}
 }
 ```

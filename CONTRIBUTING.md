@@ -1,4 +1,4 @@
-# Contributing to BillShield
+# Contributing to MedBill
 
 Thank you for your interest in helping people understand their medical bills. Here's how to get started.
 
@@ -56,7 +56,7 @@ Look for issues labeled [`good first issue`](https://github.com/MarcoCornejo/med
 
 ## Privacy Rules
 
-BillShield handles medical billing documents. When contributing:
+MedBill handles medical billing documents. When contributing:
 
 - **Never** add logging that captures document content or PII
 - **Never** add network calls in the core processing pipeline

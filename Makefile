@@ -13,7 +13,7 @@ setup: ## Install all dependencies via uv
 # =============================================================================
 
 dev: ## Start local dev server
-	uv run uvicorn src.billshield.web.app:app --reload --host 0.0.0.0 --port 8000
+	uv run uvicorn src.medbill.web.app:app --reload --host 0.0.0.0 --port 8000
 
 # =============================================================================
 # Quality
@@ -23,7 +23,7 @@ test: ## Run all tests
 	uv run pytest tests/ -v -x
 
 test-cov: ## Run tests with coverage
-	uv run pytest tests/ -v --cov=src/billshield --cov-report=html
+	uv run pytest tests/ -v --cov=src/medbill --cov-report=html
 
 lint: ## Run linters and type checker
 	uv run ruff check .
@@ -60,7 +60,7 @@ generate-bench: ## Generate 500 benchmark documents
 
 evaluate: ## Run MedBillBench on fine-tuned model
 	uv run python -m medbillbench.cli evaluate \
-		--model billshield-ocr \
+		--model medbill-ocr \
 		--model-path training/results/checkpoints/best \
 		--data-dir medbillbench/data/test
 
@@ -83,7 +83,7 @@ train: ## Run LoRA fine-tune on GLM-OCR
 # =============================================================================
 
 build: ## Build Docker image
-	docker build -t billshield:latest .
+	docker build -t medbill:latest .
 
 docker-up: ## Run via Docker Compose
 	docker compose up --build

@@ -1,8 +1,8 @@
-# BillShield Architecture
+# MedBill Architecture
 
 ## System Overview
 
-BillShield is a four-layer system for medical billing document understanding. Each layer is independently useful and publishable.
+MedBill is a four-layer system for medical billing document understanding. Each layer is independently useful and publishable.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -16,11 +16,11 @@ BillShield is a four-layer system for medical billing document understanding. Ea
 │  First public benchmark for medical billing document AI.     │
 │  Published on HuggingFace as CC-BY-4.0 dataset.              │
 │                                                              │
-│  LAYER 3: BillShield-OCR ── Fine-Tuned GLM-OCR (LoRA)       │
+│  LAYER 3: MedBill-OCR ── Fine-Tuned GLM-OCR (LoRA)       │
 │  Specialized extraction model trained on MedBillGen,         │
 │  evaluated on MedBillBench. ~50MB adapter.                   │
 │                                                              │
-│  LAYER 4: BillShield App ── Web + CLI Interface              │
+│  LAYER 4: MedBill App ── Web + CLI Interface              │
 │  Upload → Extract → Analyze → Explain → Appeal               │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -120,7 +120,7 @@ MedBillScore = (
 
 Full benchmark methodology: [BENCHMARK.md](BENCHMARK.md)
 
-## Layer 3: BillShield-OCR — Fine-Tuned Model
+## Layer 3: MedBill-OCR — Fine-Tuned Model
 
 LoRA fine-tune of GLM-OCR (0.9B) via LLaMA-Factory.
 
@@ -131,7 +131,7 @@ LoRA fine-tune of GLM-OCR (0.9B) via LLaMA-Factory.
 
 Full fine-tuning methodology: [FINE_TUNING.md](FINE_TUNING.md)
 
-## Layer 4: BillShield App
+## Layer 4: MedBill App
 
 ### Web Interface
 - FastAPI backend serving Jinja2 templates
@@ -140,9 +140,9 @@ Full fine-tuning methodology: [FINE_TUNING.md](FINE_TUNING.md)
 - Zero JavaScript build step, zero Node.js
 
 ### CLI
-- `billshield scan bill.pdf` — extract and analyze
-- `billshield appeal denial.pdf` — generate appeal letter
-- Distributed via PyPI (`pip install billshield`)
+- `medbill scan bill.pdf` — extract and analyze
+- `medbill appeal denial.pdf` — generate appeal letter
+- Distributed via PyPI (`pip install medbill`)
 
 ### Privacy Architecture
 - Documents processed in memory, purged after results returned

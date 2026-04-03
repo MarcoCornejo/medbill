@@ -1,4 +1,4 @@
-# BillShield
+# MedBill
 
 **Open-source AI that scans your medical bills, finds errors, and fights back.**
 
@@ -6,7 +6,7 @@
 
 Studies suggest a significant percentage of medical bills contain errors — some estimates put it as high as 80%, though the true rate varies. Americans carry $220 billion in medical debt. Insurance companies deny 73 million claims per year — yet fewer than 1% are appealed, even though **more than half are reversed when people do appeal.**
 
-BillShield is free, open-source software that reads your medical bills, explains the charges in plain English, flags billing errors, and drafts appeal letters for denied claims. It runs entirely on your device. Nothing is stored. Ever.
+MedBill is free, open-source software that reads your medical bills, explains the charges in plain English, flags billing errors, and drafts appeal letters for denied claims. It runs entirely on your device. Nothing is stored. Ever.
 
 ## How It Works
 
@@ -34,7 +34,7 @@ Upload bill photo/PDF
 
 **No cloud. No API calls. No data leaves your device.**
 
-## What BillShield Does
+## What MedBill Does
 
 - **Reads your bill** — OCR extraction of line items, CPT/HCPCS codes, amounts, dates
 - **Finds errors** — Duplicate charges, unbundled codes (NCCI edits), upcoding, price outliers vs. Medicare rates
@@ -53,14 +53,14 @@ make dev      # Starts local web interface at http://localhost:8000
 Or via CLI:
 
 ```bash
-pip install billshield
-billshield scan bill.pdf
-billshield appeal denial.pdf
+pip install medbill
+medbill scan bill.pdf
+medbill appeal denial.pdf
 ```
 
 ## Privacy
 
-BillShield is built on a simple principle: **your medical documents are none of our business.**
+MedBill is built on a simple principle: **your medical documents are none of our business.**
 
 - Documents are processed in memory and immediately purged
 - No accounts, no logins, no cookies
@@ -73,7 +73,7 @@ BillShield is built on a simple principle: **your medical documents are none of 
 
 ```
 medbill/
-├── src/billshield/      # Core library (OCR, rules, explanations)
+├── src/medbill/      # Core library (OCR, rules, explanations)
 ├── medbillgen/          # Synthetic medical document generator
 ├── medbillbench/        # Benchmark for medical billing document AI
 ├── training/            # Fine-tuning pipeline (GLM-OCR via LoRA)
@@ -87,8 +87,8 @@ medbill/
 |---|---|---|
 | **MedBillGen** | Synthetic document generator | Training data factory — photorealistic bills, EOBs, denial letters |
 | **MedBillBench** | Public benchmark (500 docs) | First benchmark for medical billing document understanding |
-| **BillShield-OCR** | Fine-tuned GLM-OCR (LoRA) | Specialized extraction model, runs on consumer hardware |
-| **BillShield App** | Web + CLI interface | The product people actually use |
+| **MedBill-OCR** | Fine-tuned GLM-OCR (LoRA) | Specialized extraction model, runs on consumer hardware |
+| **MedBill App** | Web + CLI interface | The product people actually use |
 
 ## Project Status
 
@@ -97,7 +97,7 @@ This project is under active development. Current phase: **foundation and data p
 - [x] Project architecture and documentation
 - [ ] MedBillGen: synthetic document generator
 - [ ] MedBillBench: evaluation benchmark
-- [ ] BillShield-OCR: fine-tuned model
+- [ ] MedBill-OCR: fine-tuned model
 - [ ] Web application
 - [ ] CLI tool
 - [ ] Docker image

@@ -1,4 +1,4 @@
-# BillShield — Product Requirements Document
+# MedBill — Product Requirements Document
 
 **Version:** 0.3.0 (MVP-first approach)
 
@@ -57,11 +57,11 @@ Each phase delivers a standalone, usable artifact. No phase depends on a future 
 | Run LoRA fine-tune | Best checkpoint |
 | Run ablation studies (data scale, LoRA rank, augmentation, templates) | Ablation results |
 | Error analysis notebook | `03_error_analysis.ipynb` |
-| Export adapter for HuggingFace | `billshield-ocr-lora/` |
+| Export adapter for HuggingFace | `medbill-ocr-lora/` |
 
 **Deliverable:** Published model adapter + benchmark results.
 
-**Ship:** Publish BillShield-OCR on HuggingFace (MIT). Useful on its own for anyone doing medical document AI.
+**Ship:** Publish MedBill-OCR on HuggingFace (MIT). Useful on its own for anyone doing medical document AI.
 
 ## Phase 4: Application (Weeks 5-7)
 
@@ -77,7 +77,7 @@ Each phase delivers a standalone, usable artifact. No phase depends on a future 
 | Appeal letter generator (6 denial categories) | `generators/appeal_letter.py` |
 | FastAPI endpoints: `/scan`, `/appeal`, `/health` | Working API |
 | Web interface (Jinja2 + HTMX + Tailwind) | Full UI |
-| CLI: `billshield scan`, `billshield appeal` | Working CLI |
+| CLI: `medbill scan`, `medbill appeal` | Working CLI |
 | Anonymous impact counters (SQLite) | `/impact` endpoint |
 
 **Deliverable:** Working app, self-hostable, privacy-first.

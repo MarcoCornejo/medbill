@@ -7,7 +7,7 @@ globs: ["tests/**", "**/*test*"]
 
 ## Test Conventions
 
-- All test files: `tests/test_{module}.py` mirroring `src/billshield/{module}.py`
+- All test files: `tests/test_{module}.py` mirroring `src/medbill/{module}.py`
 - Use `pytest` with `-v -x` (verbose, stop on first failure)
 - Pin random seeds to `42` for reproducibility
 - No network calls in unit tests — mock external services

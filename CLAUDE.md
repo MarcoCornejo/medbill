@@ -1,4 +1,4 @@
-# CLAUDE.md — BillShield
+# CLAUDE.md — MedBill
 
 Open-source, privacy-first medical bill scanner. Finds billing errors, explains charges in plain English, generates draft appeal letters. Runs entirely on-device.
 
@@ -22,8 +22,8 @@ make dev      # Start local dev server (http://localhost:8000)
 ## Project Layout
 
 New source code goes in these locations:
-- `src/billshield/` — core library (extraction, analysis, explanation)
-- `src/billshield/web/` — FastAPI app, Jinja2 templates, static assets
+- `src/medbill/` — core library (extraction, analysis, explanation)
+- `src/medbill/web/` — FastAPI app, Jinja2 templates, static assets
 - `medbillgen/` — synthetic document generator (separate package)
 - `medbillbench/` — benchmark framework (separate package)
 - `training/` — fine-tuning scripts and configs
@@ -47,5 +47,5 @@ Run `make lint && make test` before considering any task complete.
 - Don't create files without tests
 - Don't use `pip install` directly — always use `uv`
 - Don't use `print()` for debugging — use the `logging` module
-- Don't import from `medbillgen` in `src/billshield` — they are separate packages
+- Don't import from `medbillgen` in `src/medbill` — they are separate packages
 - Don't log document content, extracted text, patient names, or dollar amounts from specific documents — see `.claude/rules/privacy.md`
