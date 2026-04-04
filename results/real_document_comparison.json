@@ -1,0 +1,32 @@
+{
+  "benchmark": "MedBillBench Real Document Evaluation",
+  "num_documents": 20,
+  "date": "2026-04-03",
+  "sources": "CMS sample MSNs, BCBS/Aetna/UHC EOBs, Mayo Clinic, SSM Health, HuggingFace medical_bills dataset, Virginia Riverside",
+  "results": {
+    "glm_ocr_0.9B": {
+      "docs_processed": 16,
+      "docs_failed": 4,
+      "total_line_items": 11,
+      "cpt_codes_found": 0,
+      "code_extraction_rate": 0.0,
+      "notes": "Model extracts minimal structure from real documents. Most line items empty or $0.00."
+    },
+    "gpt_5.4": {
+      "docs_processed": 19,
+      "docs_failed": 1,
+      "total_line_items": 88,
+      "cpt_codes_found": 22,
+      "code_extraction_rate": 0.25,
+      "notes": "Extracts significantly more content but still only 25% code extraction rate on real documents."
+    }
+  },
+  "key_finding": "The gap between synthetic and real document performance is massive for ALL models. GLM-OCR drops from 86.4 (synthetic) to near-zero (real). GPT-5.4 maintains extraction of amounts/totals but CPT code extraction drops to 25%. Real medical bills with diverse layouts, mixed fonts, revenue codes, and complex formatting remain an unsolved challenge for current VLMs.",
+  "synthetic_vs_real": {
+    "glm_ocr_synthetic": 86.4,
+    "glm_ocr_real_effective": "~5-10 (estimated from 0% code rate, minimal extraction)",
+    "gpt54_synthetic": 93.2,
+    "gpt54_real_effective": "~40-50 (estimated from 25% code rate, good amount extraction)"
+  },
+  "implication": "Synthetic benchmarks dramatically overestimate real-world VLM performance on medical documents. The synthetic-to-real gap may be the most important finding in this study."
+}
