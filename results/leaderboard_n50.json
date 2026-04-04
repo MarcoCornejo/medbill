@@ -1,0 +1,19 @@
+{
+  "benchmark": "MedBillBench",
+  "version": "1.0.0",
+  "num_documents": 50,
+  "seed": 44,
+  "date": "2026-04-03",
+  "results": [
+    {"model": "GPT-5.4", "medbill_score": 93.23, "code_f1": 0.729, "amount_accuracy": 1.000, "cost_per_doc": 0.05, "local": false},
+    {"model": "GPT-4.1-nano", "medbill_score": 90.01, "code_f1": 0.676, "amount_accuracy": 0.967, "cost_per_doc": 0.003, "local": false},
+    {"model": "GPT-4o", "medbill_score": 88.44, "code_f1": 0.712, "amount_accuracy": 0.954, "cost_per_doc": 0.03, "local": false},
+    {"model": "GLM-OCR (0.9B)", "medbill_score": 86.41, "code_f1": 0.676, "amount_accuracy": 0.960, "cost_per_doc": 0, "local": true}
+  ],
+  "prompt_ablation": {
+    "generic_types": 87.9,
+    "placeholders": 45.0,
+    "example_values": 20.6,
+    "minimal": 0.0
+  }
+}
