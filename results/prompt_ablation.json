@@ -1,0 +1,14 @@
+{
+  "study": "Prompt Sensitivity in Small VLMs",
+  "model": "GLM-OCR (0.9B)",
+  "documents": 5,
+  "date": "2026-04-03",
+  "results": {
+    "generic_types": {"medbill_score": 87.9, "code_f1": 0.717, "amount_accuracy": 1.000, "prompt_style": "str | null"},
+    "placeholder": {"medbill_score": 45.0, "code_f1": 0.000, "amount_accuracy": 0.000, "prompt_style": "5-digit, letter+4digits"},
+    "example_values": {"medbill_score": 20.6, "code_f1": 0.000, "amount_accuracy": 0.089, "prompt_style": "99213, J0585"},
+    "minimal": {"medbill_score": 0.0, "code_f1": 0.000, "amount_accuracy": 0.000, "prompt_style": "no schema, free-form"}
+  },
+  "finding": "Generic type annotations (str | null) produce the best extraction from small VLMs. Concrete examples and placeholders cause the model to echo the prompt instead of reading the document. Example values perform WORSE than placeholders.",
+  "implication": "VLM benchmarks using example-based or few-shot prompts may have contaminated baselines. Prompt format has a larger effect on extraction accuracy than model size."
+}
